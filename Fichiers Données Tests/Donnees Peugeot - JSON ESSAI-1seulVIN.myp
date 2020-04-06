@@ -1,0 +1,99 @@
+[
+    {
+        "vin": "VF3LBLABLABAL",
+        "trips": [
+            {
+                "alertsActive": [
+
+                ],
+                "endPosQuality": 0,
+                "maintenanceDays": -1,
+                "startPosLatitude": 40.0427500009536743,
+                "startDateTime": 1579799640,
+                "endMileage": 41241.69921875,
+                "endDateTime": 1579802820,
+                "endPosLongitude": 3.0427500009536743,
+                "consumption": 0.65024000406265259,
+                "endPosLatitude": 30.0427500009536743,
+                "fuelAutonomy": 720,
+                "startMileage": 41238.30078125,
+                "destAddress": "",
+                "fuelLevel": 96,
+                "id": 5685,
+                "maintenanceDistance": 11200,
+                "alertsResolved": [
+
+                ],
+                "maintenancePassed": false,
+                "startPosLongitude": 6.0427500009536743,
+                "destQuality": 0,
+                "endPosAltitude": 50,
+                "startPosQuality": 255
+            },
+            {
+                "alertsActive": [
+
+                ],
+                "maintenanceDays": -1,
+                "startPosLatitude": 30.0427500009536743,
+                "startDateTime": 1579944840,
+                "endPosQuality": 0,
+                "endMileage": 41241.69921875,
+                "endDateTime": 1579945320,
+                "endPosLongitude": 1.0427500009536743,
+                "startPosAddress": "3 Ruée Forêt à Vendre\n12345 La Ville",
+                "consumption": 0.29183998703956604,
+                "endPosLatitude": 60.416511535644531,
+                "fuelAutonomy": 720,
+                "startMileage": 41238.30078125,
+                "destAddress": "",
+                "fuelLevel": 96,
+                "id": 5686,
+                "maintenanceDistance": 11100,
+                "alertsResolved": [
+                    {
+                        "code": 107
+                    }
+                ],
+                "maintenancePassed": false,
+                "startPosLongitude": 1.0427500009536743,
+                "destQuality": 0,
+                "endPosAltitude": 10,
+                "endPosAddress": "16 Ruée Forêt à Vendre\n12345 La Ville 2",
+                "startPosAltitude": 50,
+                "startPosQuality": 255
+            },
+            {
+                "alertsActive": [
+
+                ],
+                "maintenanceDays": -1,
+                "startPosLatitude": 60.416511535644531,
+                "startDateTime": 1579946040,
+                "endPosQuality": 0,
+                "endMileage": 41245.3984375,
+                "endDateTime": 1579946520,
+                "endPosLongitude": 1.0427900552749634,
+                "startPosAddress": "16 Ruée Forêt à Vendre\n12345 La Ville 2",
+                "consumption": 0.30904000997543335,
+                "endPosLatitude": 49.397838592529297,
+                "fuelAutonomy": 680,
+                "startMileage": 41241.69921875,
+                "destAddress": "",
+                "fuelLevel": 95,
+                "id": 5687,
+                "maintenanceDistance": 11100,
+                "alertsResolved": [
+
+                ],
+                "maintenancePassed": false,
+                "startPosLongitude": 1.0405700206756592,
+                "destQuality": 0,
+                "endPosAltitude": 45,
+                "endPosAddress": "3 Ruée Forêt à Vendre\n12345 La Ville",
+                "startPosAltitude": 15,
+                "startPosQuality": 255
+            }
+        ]
+    }
+]
