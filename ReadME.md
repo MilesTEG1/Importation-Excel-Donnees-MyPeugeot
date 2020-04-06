@@ -11,7 +11,7 @@ J'ai commencé [à en parler ici](https://www.forum-peugeot.com/Forum/threads/fi
 
 Il faut exporter ses données MyPeugeot en utilisant cet option :
 ![Option à utiliser](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/Option%20pour%20exporter%20les%20trajets%20dans%20l'app%20MyPeugeot.png)
-upload_2020-4-5_18-58-20.png
+
 Ça va envoyer un email avec un fichier .myp.
 
 Pourquoi refaire un fichier qui fonctionne ?
@@ -22,9 +22,8 @@ Pour celà je me suis aidé de cette bibliothèque de fonctions :
 [VBA-JSON-2.3.1](https://github.com/VBA-tools/VBA-JSON)
 
 Le fichier utilisé est normalement déjà inclus dans le fichier excel.
-Cependant il faut activer une référence : Microsoft Scripting Runtime afin d'ouvrir le fichier et l'utiliser.
+Cependant il faut activer une référence : **Microsoft Scripting** Runtime afin d'ouvrir le fichier et l'utiliser.
 ![Référence à ajouter VBA](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/R%C3%A9f%C3%A9rence%20%C3%A0%20Ajouter%20au%20projet%20VBA.png)
-
 
 
 Je précise que pour le moment ne fonctionne que ceci :
