@@ -4,9 +4,7 @@ Importation des données issues de l'application MyPeugeot dans un tableau Excel
 Fichier excel avec macros qui permet de récupérer les données de l'application MyPeugeot et d'en faire des statistiques.
 
 Mon projet est une variante assez proche (j'ai piqué plein d'idées) à celui-ci :
-[Trajets myp de MYPEUGEOT APP sous Excel toutes versions](https://www.forum-peugeot.com/Forum/threads/trajets-myp-de-mypeugeot-app-sous-excel-toutes-versions.9456/)
-
- 
+[Trajets myp de MYPEUGEOT APP sous Excel toutes versions](https://www.forum-peugeot.com/Forum/threads/trajets-myp-de-mypeugeot-app-sous-excel-toutes-versions.9456/)  
 J'ai commencé [à en parler ici](https://www.forum-peugeot.com/Forum/threads/fichier-excel-macros-pour-r%C3%A9cup%C3%A9rer-les-trajets-de-lapplication-mypeugeot.119785/)
 
 
