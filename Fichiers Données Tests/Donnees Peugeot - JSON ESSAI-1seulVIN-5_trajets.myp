@@ -7,6 +7,7 @@
                 "consumption": 0.65024000406265259,
                 "destAddress": "",
                 "destQuality": 0,
+                "endPosAddress": "Ü-ü-Û-û-Ï-ï-Î-î-Ô-ô-Ö-ö",
                 "endDateTime": 1579802820,
                 "endMileage": 41241.69921875,
                 "endPosAltitude": 50,
@@ -21,6 +22,7 @@
                 "maintenancePassed": false,
                 "startDateTime": 1579799640,
                 "startMileage": 41238.30078125,
+                "startPosAddress": "À-à-Â-â-È-è-Ç-ç-É-é-Ê-ê-Ë-ë",
                 "startPosLatitude": 40.0427500009536743,
                 "startPosLongitude": 6.0427500009536743,
                 "startPosQuality": 255
@@ -138,6 +140,6 @@
                 "startPosQuality": 255
             }
         ],
-        "vin": "VF3LBLABLABAL"
+        "vin": "VF3LBLABLABALXDESZ"
     }
 ]
