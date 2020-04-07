@@ -9,10 +9,46 @@ Attribute VB_Name = "Module1"
 ' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
 
 
+
+'
+' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
+'
+Const L_premiere_valeur As Integer = 5      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
+Const C_vin             As Integer = 1      ' COLONNE = 1 (A) -> VIN pour le trajet (il est possible d'avoir plusieurs VIN dans le fichier de donnée).
+Const C_id              As Integer = 2      '         = 2 (B) -> Trip ID#
+Const C_date_dep        As Integer = 3      '         = 3 (C) -> Date de Départ (à déterminer avec une conversion)
+Const C_date_arr        As Integer = 4      '         = 4 (D) -> Date de Fin    (à déterminer avec une conversion)
+Const C_duree           As Integer = 5      '         = 5 (E) -> Durée du trajet  (à calculer)
+Const C_dist            As Integer = 6      '         = 6 (F) -> Distance du trajet en km
+Const C_dist_tot        As Integer = 7      '         = 7 (G) -> Distance totale au compteur km
+Const C_conso           As Integer = 8      '         = 8 (H) -> Consommation du tajet en L
+Const C_conso_moy       As Integer = 9      '         = 9 (I) -> Consommation moyenne en L/100km
+Const C_pos_dep_lat     As Integer = 10     '         = 10 (J) -> Position de départ - Latitude
+Const C_pos_dep_long    As Integer = 11     '         = 11 (K) -> Position de départ - Longitude
+Const C_pos_dep_adr     As Integer = 12     '         = 12 (L) -> Position de départ - Adresse
+Const C_pos_arr_lat     As Integer = 13     '         = 13 (M) -> Position d'arrivée - Latitude
+Const C_pos_arr_long    As Integer = 14     '         = 14 (N) -> Position d'arrivée - Longitude
+Const C_pos_arr_adr     As Integer = 15     '         = 15 (O) -> Position d'arrivée - Adresse
+Const C_niv_carb        As Integer = 16     '         = 16 (P) -> Niveau de carburant en %
+Const C_auto            As Integer = 17     '         = 17 (Q) -> Autonomie restante en km
+Const CELL_vin_entete   As String = "B1"    ' Cellule qui contiendra le VIN associé aux données de l'en-tête
+Const CELL_nb_trips     As String = "H1"    ' Cellule qui contiendra le nombre de trajets totale (tous VIN confondus)
+Const CELL_fichierMYP   As String = "O1"    ' Cellule qui contiendra le nom du fichier importé
+Const CELL_km           As String = "H2"    ' Cellule qui contiendra le kilométrage actuel de la voiture
+Const CELL_conso_tot    As String = "L1"    ' Cellule qui contiendra la consommation totale en L
+Const CELL_conso_tot_moy    As String = "L2"    ' Cellule qui contiendra la consommation moyenne totale pour tous les trajets
+Const CELL_plage_donnees    As String = "A" & L_premiere_valeur & ":Q20000" ' Plage de cellules contenant les données
+Const CELL_plage_conso_tot  As String = "H" & L_premiere_valeur & ":H"      ' Cellule qui contiendra le kilométrage actuel de la voiture
+
+Const VERSION As String = "Version du fichier" & vbLf & "v1.4"    ' Version du fchier
+Const CELL_ver As String = "D1:D2"     ' Cellule où afficher la version du fichier
+'
+' Fin de déclaration des constantes
+'
+
 '
 ' Fonction pour lire les données depuis un fichier JSON et les écrire dans le tableau
 '
-
 Sub MYP_JSON_Decode()
     Dim jsonText As String
     Dim jsonObject As Object, item As Object, item_item As Object
@@ -22,19 +58,18 @@ Sub MYP_JSON_Decode()
     Dim FSO As New FileSystemObject
     Dim JsonTS As TextStream
     
-    Dim FichierMYP As String    ' nom du fichier myp
+    Dim FichierMYP As Variant   ' nom du fichier myp
     Dim nbTrip, nbTripReel As Integer ' nombre de trajets
     Dim kilometrage As Single   ' Pour stocker le kilométrage total de la voiture.
     Dim conso_totale As Single  ' Pour stocker la consommation totale de tout le tableau
     
     Set ws = Worksheets("Trajets-MyPeugeot")
-    
-'    jsonText = ws.Range("Q1")   ' Pour le 1er test, je mets le contenu du fichier test JSON dans la cellule Q1
+    EcrireValeurFormat cell:=ws.Range(CELL_ver), val:=VERSION, f_size:=10, wrap:=True
     
     JsonConverter.JsonOptions.UseDoubleForLargeNumbers = True
     
-    FichierMYP = Application.GetOpenFilename("Fichiers trajets Peugeot App (*.myp),*.myp")  ' On demande la sélection du fichier
-    If FichierMYP = "" Then
+    FichierMYP = Application.GetOpenFilename("Fichiers trajets Peugeot App (*.myp),*.myp,Fichiers trajets Citroen App (*.myc),*.myc,Fichiers trajets DS App (*.myd),*.myd")  ' On demande la sélection du fichier
+    If FichierMYP = False Then
         MsgBox "Aucun fichier n'a été selectionné !"
         Exit Sub
     Else
@@ -47,35 +82,23 @@ Sub MYP_JSON_Decode()
         
         nbTrip = 0    ' On réinitialise le nombre de trajets
     
-        ws.Range("N1") = FichierMYP     ' On écrit le chemin d'accès du fichier.
+        EcrireValeurFormat cell:=ws.Range(CELL_fichierMYP), val:=FichierMYP, wrap:=True
+        
     End If
     
   
     Set jsonObject = JsonConverter.ParseJson(jsonText)
-  
-    i = 5   ' Le n° de la ligne où on va commencer à écrire les données
-            ' ws.Cells(LIGNE, COLONNE)     Où LIGNE commence à 1
-            '                              Où COLONNE commence à 1 = A
-            ' COLONNE = 1 (A) -> Trip ID#
-            '         = 2 (B) -> Date de Début  (à déterminer avec une conversion)
-            '         = 3 (C) -> Date de Fin    (à déterminer avec une conversion)
-            '         = 4 (D) -> Durée du trajet  (à calculer)
-            '         = 5 (E) -> Distance du trajet en km
-            '         = 6 (F) -> Distance totale au compteur km
-            '         = 7 (G) -> Consommation du tajet en L
-            '         = 8 (H) -> Consommation moyenne en L/100km
-            '         = 9 (I) -> Position de départ - Latitude
-            '         = 10 (J) -> Position de départ - Longitude
-            '         = 11 (K) -> Position de départ - Adresse
-            '         = 12 (L) -> Position d'arrivée - Latitude
-            '         = 13 (M) -> Position d'arrivée - Longitude
-            '         = 14 (N) -> Position d'arrivée - Adresse
-            '         = 15 (O) -> Niveau de carburant en %
-            '         = 16 (P) -> Autonomie restante en km
-            
-
-  
+    
+        
+    i = L_premiere_valeur   ' On défini un compteur qui sert à se positionner sur la ligne où les données doivent être écrites.
+                            ' Le n° de la ligne où on va commencer à écrire les données
+                            ' ws.Cells(LIGNE, COLONNE)     Où LIGNE commence à 1
+                            '                              Où COLONNE commence à 1 = A
+                            ' On va utiliser les constantes définie avant la fonction pour écrire/formater/effacer une cellule
+                            
+                            
     For Each item In jsonObject
+        
         For Each item_item In item("trips")   ' Boucle pour récupérer les trajets
             
             Dim MaDate_UNIX_GMT_dep As Long, MaDate_DST_dep As Date  ' Pour convertir la date unix de départ en date excel
@@ -83,8 +106,15 @@ Sub MYP_JSON_Decode()
             Dim duree_trajet As Long, duree_trajet_bis As Date
             Dim distance_trajet As Single, conso_trajet As Single, niveau_carb As Single
                                               
-            ws.Cells(i, 1) = item_item("id")
-      
+'            With ws.Cells(i, C_vin)
+'                .Value = item("vin")   ' On écrit le VIN récupéré
+'                .Font.Size = 8
+'                .NumberFormat = "General"
+'            End With
+            
+            EcrireValeurFormat cell:=ws.Cells(i, C_vin), val:=item("vin"), f_size:=8    ' On écrit le VIN récupéré
+            EcrireValeurFormat cell:=ws.Cells(i, C_id), val:=item_item("id")            ' On écrit l'ID récupéré
+            
             ' Récupération des dates
             ' On stocke les deux dates (départ et arrivée) car il faut déterminer le temps de parcours
             ' qui ne doit pas être dépendant d'un éventuelle changement d'heure en cours de route
@@ -92,87 +122,147 @@ Sub MYP_JSON_Decode()
             MaDate_UNIX_GMT_arr = item_item("endDateTime")              ' Date d'arrivée
             MaDate_DST_dep = Date_UNIX_To_Date_DST(MaDate_UNIX_GMT_dep)
             MaDate_DST_arr = Date_UNIX_To_Date_DST(MaDate_UNIX_GMT_arr)
-            'ws.Cells(i, 2) = Format(MaDate_DST_dep, "dd/mm/yy - hh:mm")
-            'ws.Cells(i, 3) = Format(MaDate_DST_arr, "dd/mm/yy - hh:mm")
-            ws.Cells(i, 2) = MaDate_DST_dep
-            ws.Cells(i, 2).NumberFormat = "dd/mm/yy - hh:mm"
-            ws.Cells(i, 3) = MaDate_DST_arr
-            ws.Cells(i, 3).NumberFormat = "dd/mm/yy - hh:mm"
+            
+            EcrireValeurFormat cell:=ws.Cells(i, C_date_dep), val:=MaDate_DST_dep, n_format:="date"
+            EcrireValeurFormat cell:=ws.Cells(i, C_date_arr), val:=MaDate_DST_arr, n_format:="date"
+            
             ' Calcul de la durée du trajet en cours
             duree_trajet = MaDate_UNIX_GMT_arr - MaDate_UNIX_GMT_dep
             duree_trajet_bis = Date_UNIX_To_Date_GMT(MaDate_UNIX_GMT_arr) - Date_UNIX_To_Date_GMT(MaDate_UNIX_GMT_dep)
-            'ws.Cells(i, 4) = Format(duree_trajet_bis, "h:mm")
-            ws.Cells(i, 4) = duree_trajet_bis
-            ws.Cells(i, 4).NumberFormat = "h:mm"
+            
+            EcrireValeurFormat cell:=ws.Cells(i, C_duree), val:=duree_trajet_bis, n_format:="duree"
+            
             distance_trajet = item_item("endMileage") - item_item("startMileage")
-            ws.Cells(i, 5) = distance_trajet
-            ws.Cells(i, 5).NumberFormatLocal = "0,0"
-            ws.Cells(i, 6) = item_item("endMileage")
-            ws.Cells(i, 6).NumberFormatLocal = "0"
-            ws.Cells(i, 7) = item_item("consumption")
-            conso_trajet = ws.Cells(i, 7)
-            ws.Cells(i, 7).NumberFormatLocal = "0,00"
+            EcrireValeurFormat cell:=ws.Cells(i, C_dist), val:=distance_trajet, n_format:="1"
+            EcrireValeurFormat cell:=ws.Cells(i, C_dist_tot), val:=item_item("endMileage"), n_format:="0"
+            
+            EcrireValeurFormat cell:=ws.Cells(i, C_conso), val:=item_item("consumption"), n_format:="2"
+            conso_trajet = ws.Cells(i, C_conso)
+            'ws.Cells(i, C_conso) = item_item("consumption")
+            'conso_trajet = ws.Cells(i, C_conso)
+            
+            'ws.Cells(i, C_conso).NumberFormatLocal = "0,00"
+            
             ' Pour le calcul de la consommation moyenne, il faut éviter la division par zéro dans le cas où
             ' la voiture à tourner à l'arret, la distance parcourue est nulle
             If distance_trajet <> 0 Then
-                ws.Cells(i, 8) = conso_trajet / distance_trajet * 100
-                ws.Cells(i, 8).NumberFormatLocal = "0,0"
+                EcrireValeurFormat cell:=ws.Cells(i, C_conso_moy), val:=conso_trajet / distance_trajet * 100, n_format:="1"
+                'ws.Cells(i, C_conso_moy) = conso_trajet / distance_trajet * 100
+                'ws.Cells(i, C_conso_moy).NumberFormatLocal = "0,0"
             Else
-                ws.Cells(i, 8) = "//"
-                ws.Cells(i, 8).NumberFormat = "General"
+                EcrireValeurFormat cell:=ws.Cells(i, C_conso_moy), val:="//"
+                'ws.Cells(i, C_conso_moy) = "//"
+                'ws.Cells(i, C_conso_moy).NumberFormat = "General"
             End If
 
-            ws.Cells(i, 9) = item_item("startPosLatitude")
-            ws.Cells(i, 10) = item_item("startPosLongitude")
-            
+            EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_lat), val:=item_item("startPosLatitude")
+            EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_long), val:=item_item("startPosLongitude")
+                        
             Dim adresse_dep As String, adresse_arr As String
             adresse_dep = item_item("startPosAddress")
-            ws.Cells(i, 11) = Correction_Adresse(adresse_dep)
-            ws.Cells(i, 11).WrapText = False
-            ws.Cells(i, 12) = item_item("endPosLatitude")
-            ws.Cells(i, 13) = item_item("endPosLongitude")
+            EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_adr), val:=Correction_Adresse(adresse_dep)
+            
+            EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_lat), val:=item_item("endPosLatitude")
+            EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_long), val:=item_item("endPosLongitude")
             
             adresse_arr = item_item("endPosAddress")
-            ws.Cells(i, 14) = Correction_Adresse(adresse_arr)
-            ws.Cells(i, 14).WrapText = False
-            ws.Cells(i, 15) = item_item("fuelLevel") / 100
-            ws.Cells(i, 15).NumberFormat = "0 %"
-            ws.Cells(i, 16) = item_item("fuelAutonomy")
+            EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_adr), val:=Correction_Adresse(adresse_arr)
+            
+            EcrireValeurFormat cell:=ws.Cells(i, C_niv_carb), val:=item_item("fuelLevel") / 100, n_format:="%"
+
+            EcrireValeurFormat cell:=ws.Cells(i, C_auto), val:=item_item("fuelAutonomy")
             
             i = i + 1
             nbTrip = nbTrip + 1
-            kilometrage = item_item("endMileage")
+
+            kilometrage = item_item("endMileage")   ' On stocke le kilométrage de fin de trajet pour être affiché en tant que kilométrage actuel lors du dernier trajet
+            
         Next
     
-        ws.Range("B1") = item("vin")   ' On écrit le VIN récupéré
+
             
     Next
     
-    ws.Range("G1") = nbTrip   ' On a maintenant le nombre de trajet
-    ws.Range("G2") = kilometrage ' On écrit le kilométrage total de la voiture
-    ws.Range("G2").NumberFormatLocal = "0"
+    EcrireValeurFormat cell:=ws.Range(CELL_nb_trips), val:=nbTrip, f_size:=12                   ' On écrit le nombre de trajet
+    EcrireValeurFormat cell:=ws.Range(CELL_km), val:=kilometrage, n_format:="0", f_size:=12     ' On écrit le kilométrage total de la voiture
+
     
     ' Calcul de la consommation totale du tableau
     Dim j As Integer
     j = 4 + nbTrip      ' valeur qui délimite la dernière cellule de la colonne G contenant une consommation
-    Set MaPlage = ws.Range("G5:G" & j)
-    conso_totale = ws.Application.WorksheetFunction.Sum(MaPlage)
-    ws.Range("K1") = conso_totale   ' On a maintenant la consommation totale de tous les trajets
-    ws.Range("K1").NumberFormatLocal = "0,00"
-    ws.Range("K2").NumberFormatLocal = "0,0"
+    'Set MaPlage = ws.Range("H5:H" & j)
+    'conso_totale = ws.Application.WorksheetFunction.Sum(ws.Range("H5:H" & j))
+    
+    ' On écrit la valeur calculée de la consommation totale de tous les trajets
+    EcrireValeurFormat cell:=ws.Range(CELL_conso_tot), val:=ws.Application.WorksheetFunction.Sum(ws.Range("H5:H" & j)), n_format:="2", f_size:=12
+    
+    'ws.Range(CELL_conso_tot) = conso_totale   ' On a maintenant la consommation totale de tous les trajets
+    'ws.Range(CELL_conso_tot).NumberFormatLocal = "0,00"
+    
+    ws.Range(CELL_conso_tot_moy).NumberFormatLocal = "0,0"
 
+End Sub
+
+Private Sub EcrireValeurFormat(cell As Variant, val As Variant, Optional n_format As String = "General", Optional f_size As Integer = 10, Optional wrap As Boolean = False)
+    ' Fonction pour écrire une valeur dans une cellule
+    ' Arguments obligatoires :  cellule As Variant  <- La cellule ou plage de cellule devant être modifiée
+    '                           val As Variant      <- La valeur à écrire dans la cellule/plage
+    ' Arguments optionels :     n_format As String = ""         <- Le format NumberFormat, défaut = "Genral"
+    '                                                           <- Valeurs = "date" pour format date
+    '                                                           <- Valeurs = "duree" pour format durée
+    '                                                           <- Valeurs = "0" pour format numérique Local sans virgule
+    '                                                           <- Valeurs = "1" pour format numérique Local avec 1 chiffre après la virgule
+    '                                                           <- Valeurs = "2" pour format numérique Local avec 2 chiffres après la virgule
+    '                           font_size As Integer = 10       <- La taille de caractère, défaut = 10
+    '                           wrap As Boolean = False         <- Retour à la ligne dans la cellule, défaut = faux
+    With cell
+        
+        .Value = val
+        
+        Select Case n_format
+            Case "date"
+                .NumberFormat = "dd/mm/yy - hh:mm"
+            Case "duree"
+                .NumberFormat = "h:mm"
+            Case "0"
+                .NumberFormatLocal = "0"
+            Case "1"
+                .NumberFormatLocal = "0,0"
+            Case "2"
+                .NumberFormatLocal = "0,00"
+            Case "%"
+                .NumberFormat = "0 %"
+            Case Else
+                NumberFormat = "General"
+        End Select
+        
+        If (f_size <> 10) Then
+            .Font.Size = f_size
+        Else
+            .Font.Size = 10
+        End If
+        
+        If (wrap = True) Then
+            .WrapText = True
+        Else
+            .WrapText = False
+        End If
+        
+    End With
+    
 End Sub
 
 Sub Effacage_Donnees()
     ' Fonction pour effacer les données avant d'utiliser celles du fichier ouvert
     With Worksheets("Trajets-MyPeugeot")
-        .Range("B1") = ""           ' Le VIN
-        .Range("N1") = ""           ' Le nom du fichier
-        .Range("G1:G2") = ""        ' Le nombre de trajet et le kilométrage total
-        .Range("A5:P10000") = ""    ' Le grand tableau de valeurs de tous les trajets effectués
-        .Range("K1") = ""           ' La consommation totale sur tous les trajets
+        .Range(CELL_vin_entete) = ""           ' Le VIN
+        .Range(CELL_fichierMYP) = ""           ' Le nom du fichier
+        .Range(CELL_nb_trips) = ""  ' Le nombre de trajet et le kilométrage total
+        .Range(CELL_km) = ""
+        .Range(CELL_plage_donnees) = ""    ' Le grand tableau de valeurs de tous les trajets effectués
+        .Range(CELL_conso_tot) = ""           ' La consommation totale sur tous les trajets
     End With
-    With Worksheets("DATA")
+    With Worksheets("Donnees-Recap")
         .Range("A2:D10000") = ""  ' Un tableau récapitulatif mensuel
         .Range("F4:F53") = 0      ' Le nombre de trajets regroupé en plage de distance
         .Range("H4:H53") = 0      ' La distance des regroupements de trajets
