@@ -1,7 +1,18 @@
 Attribute VB_Name = "Module1"
+' Licence utilisée :
+'                   GNU AFFERO GENERAL PUBLIC LICENSE
+'                      Version 3, 19 November 2007
+'
+' Dépôt GitHub : https://github.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/blob/master/LICENSE.md
+'
+' @author MilesTEG1@gmail.com
+' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
+
+
 '
 ' Fonction pour lire les données depuis un fichier JSON et les écrire dans le tableau
 '
+
 Sub MYP_JSON_Decode()
     Dim jsonText As String
     Dim jsonObject As Object, item As Object, item_item As Object
@@ -19,6 +30,8 @@ Sub MYP_JSON_Decode()
     Set ws = Worksheets("Trajets-MyPeugeot")
     
 '    jsonText = ws.Range("Q1")   ' Pour le 1er test, je mets le contenu du fichier test JSON dans la cellule Q1
+    
+    JsonConverter.JsonOptions.UseDoubleForLargeNumbers = True
     
     FichierMYP = Application.GetOpenFilename("Fichiers trajets Peugeot App (*.myp),*.myp")  ' On demande la sélection du fichier
     If FichierMYP = "" Then
