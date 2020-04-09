@@ -10,6 +10,10 @@ Attribute VB_Name = "Module1"
 ' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
 '
 '
+' Couples de versions d'Excel & OS testées :
+'       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (build 12624.20382)
+'       -
+'
 Option Explicit     ' On force à déclarer les variables
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
