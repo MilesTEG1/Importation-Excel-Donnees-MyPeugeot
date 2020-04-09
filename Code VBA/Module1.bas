@@ -39,12 +39,16 @@ Const CELL_conso_tot    As String = "L1"    ' Cellule qui contiendra la consomma
 Const CELL_conso_tot_moy    As String = "L2"    ' Cellule qui contiendra la consommation moyenne totale pour tous les trajets
 Const CELL_plage_donnees    As String = "A" & L_Premiere_Valeur & ":Q20000" ' Plage de cellules contenant les données
 Const CELL_plage_conso_tot  As String = "H" & L_Premiere_Valeur & ":H"      ' Cellule qui contiendra le kilométrage actuel de la voiture
+Const CELL_plage_1ereligne  As String = "A" & L_Premiere_Valeur & ":Q" & L_Premiere_Valeur  ' Toute la 1ere ligne de donnée pour en faire le tri
+Const CELL_plage_max_Donnees As String = "A" & L_Premiere_Valeur & ":Q65536"    ' La plage de données maximale possible
+Const CELL_plage_max_COL_vin As String = "A" & L_Premiere_Valeur & ":A65536"    ' La plage de données maximale possible
+Const CELL_plage_max_COL_id As String = "B" & L_Premiere_Valeur & ":B65536"    ' La plage de données maximale possible
 
 ' V1.5 : MultiVIN
 Const G_Nb_VIN_Max = 20                     ' Nb VIN max traité par cette macro
 Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par cette macro
 
-Const VERSION As String = "Version du fichier" & vbLf & "v1.7.2"    ' Version du fchier
+Const VERSION As String = "Version du fichier" & vbLf & "v1.7.3"    ' Version du fchier
 Const CELL_ver As String = "D1:D2"     ' Cellule où afficher la version du fichier
 '
 ' Fin de déclaration des constantes
@@ -56,7 +60,7 @@ Const CELL_ver As String = "D1:D2"     ' Cellule où afficher la version du fichi
 Sub MYP_JSON_Decode()
     Dim jsonText As String
     Dim jsonObject As Object, item As Object, item_item As Object
-    Dim i, j, k As Long
+    Dim i, j, k As Long     ' Variables utilisées pour les compteurs de boucles For
     Dim ws As Worksheet
     
     Dim FSO As New FileSystemObject
@@ -72,6 +76,7 @@ Sub MYP_JSON_Decode()
     Dim duree_trajet As Long, duree_trajet_bis As Date
     Dim distance_trajet As Single, conso_trajet As Single, niveau_carb As Single
     Dim adresse_dep As String, adresse_arr As String
+    Dim derniere_val_tab    ' Dernière ligne qui contiendra un trajet
         
 ' V1.5 : pour MultiVIN
     Dim l_Tab_Vin As Integer                    ' pour boucle sur les vin
@@ -169,7 +174,6 @@ Sub MYP_JSON_Decode()
 
 'V1.7 : optimisation : retrait de la mise à jour de l'affichage
     Application.ScreenUpdating = False
-
     Application.StatusBar = "Traitement des données en cours, patience..."
     
 ' V1.6 : stockage dans un tableau interne (que l'on vide d'abord) de tous les trajets déjà dans l'Excel
@@ -260,25 +264,27 @@ Sub MYP_JSON_Decode()
                     ws.Cells(i, C_auto).Value = item_item("fuelAutonomy")
                     
                     i = i + 1
-                    nbTrip = nbTrip + 1
+                    
         
-                    kilometrage = item_item("endMileage")   ' On stocke le kilométrage de fin de trajet pour être affiché en tant que kilométrage actuel lors du dernier trajet
+                    ' Il n'est plus utilse de récupérer ces valeurs ici puisqu'elles sont récupérer plus bas en utilisant les range()
+                    'nbTrip = nbTrip + 1
+                    'kilometrage = item_item("endMileage")   ' On stocke le kilométrage de fin de trajet pour être affiché en tant que kilométrage actuel lors du dernier trajet
 ' V1.6 : fin du test
                 End If
             Next
     
-' V .1.5 : fin du test
+' V1.5 : fin du test
         End If
     Next
     
 ' V1.6 : tri final sur colonnes A puis B
-    ws.Range("A5:Q5").Select
+    ws.Range(CELL_plage_1ereligne).Select
     ws.Range(Selection, Selection.End(xlDown)).Select
     ws.Sort.SortFields.Clear
-    ws.Sort.SortFields.Add Key:=Range("A5:A65536"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
-    ws.Sort.SortFields.Add Key:=Range("B5:B65536"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    ws.Sort.SortFields.Add Key:=Range(CELL_plage_max_COL_vin), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal     ' Range de base "A5:A65536"
+    ws.Sort.SortFields.Add Key:=Range(CELL_plage_max_COL_id), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal      ' Range de base "B5:B65536"
     With ws.Sort
-        .SetRange Range("A5:Q65536")
+        .SetRange Range(CELL_plage_max_Donnees)        ' range par défaut "A5:Q65536"
         .Header = xlGuess
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -286,7 +292,7 @@ Sub MYP_JSON_Decode()
         .Apply
     End With
     
-    ws.Cells(1, 4).Select
+    ws.Cells(1, 4).Select   ' On sélection la cellule de version pour ne pas avoir tout le tableau sélectionné
         
 ' V1.7 : mise en place du formatage par colonne
 ' Colonne VIN
@@ -344,17 +350,16 @@ Sub MYP_JSON_Decode()
     nbTrip = ws.Range(ws.Cells(L_Premiere_Valeur, C_id), ws.Cells(L_Premiere_Valeur, C_id).End(xlDown)).Count
     EcrireValeurFormat cell:=ws.Range(CELL_nb_trips), val:=nbTrip, f_size:=12                   ' On écrit le nombre de trajet
     
+    derniere_val_tab = 4 + nbTrip      ' valeur qui délimite la dernière ligne contenant un trajet
+    
     ' On récupère le kilométrage final du dernier trajer vu qu'il n'est plus forcément récupéré si on charge un fichier de donnée où il n'y a pas de nouveaux trajets
-    kilometrage = ws.Cells(nbTrip + L_Premiere_Valeur - 1, C_dist_tot).Value
+    kilometrage = ws.Cells(derniere_val_tab, C_dist_tot).Value
     EcrireValeurFormat cell:=ws.Range(CELL_km), val:=kilometrage, n_format:="0", f_size:=12     ' On écrit le kilométrage total de la voiture
     
     ' Calcul de la consommation totale du tableau
-    j = 4 + nbTrip      ' valeur qui délimite la dernière cellule de la colonne G contenant une consommation
-    'Set MaPlage = ws.Range("H5:H" & j)
-    'conso_totale = ws.Application.WorksheetFunction.Sum(ws.Range("H5:H" & j))
-    
+    conso_totale = ws.Application.WorksheetFunction.Sum(ws.Range(CELL_plage_conso_tot & derniere_val_tab))
     ' On écrit la valeur calculée de la consommation totale de tous les trajets
-    EcrireValeurFormat cell:=ws.Range(CELL_conso_tot), val:=ws.Application.WorksheetFunction.Sum(ws.Range("H5:H" & j)), n_format:="2", f_size:=12
+    EcrireValeurFormat cell:=ws.Range(CELL_conso_tot), val:=conso_totale, n_format:="2", f_size:=12
     
     ws.Range(CELL_conso_tot_moy).NumberFormatLocal = "0,0"
     
