@@ -8,6 +8,9 @@ Attribute VB_Name = "Module1"
 ' @author MilesTEG1@gmail.com
 ' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
 '
+'
+Option Explicit     ' On force à déclarer les variables
+'
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
 Const L_Premiere_Valeur As Integer = 5      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
@@ -41,7 +44,7 @@ Const CELL_plage_conso_tot  As String = "H" & L_Premiere_Valeur & ":H"      ' Ce
 Const G_Nb_VIN_Max = 20                     ' Nb VIN max traité par cette macro
 Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par cette macro
 
-Const VERSION As String = "Version du fichier" & vbLf & "v1.7.1"    ' Version du fchier
+Const VERSION As String = "Version du fichier" & vbLf & "v1.7.2"    ' Version du fchier
 Const CELL_ver As String = "D1:D2"     ' Cellule où afficher la version du fichier
 '
 ' Fin de déclaration des constantes
@@ -90,7 +93,7 @@ Sub MYP_JSON_Decode()
     CheminFichier = ActiveWorkbook.Path & "\"
     ' Il y a une erreur si on travail dans le dossier OneDrive, le CheminFicher est un lien du type https://d.docs.live.net/8f87e4...
     ' Il faut donc vérifier si le début chaine de caractère n'est pas https://
-    If InStr(1, CheminFichier, "https://", vbTextCompare) <> 1 Then
+    If (InStr(1, CheminFichier, "https://", vbTextCompare) <> 1 And InStr(1, CheminFichier, "http://", vbTextCompare) <> 1) Then
         ChDir CheminFichier     ' Le chemin du fichier ne contient pas de lien, on change le dossier d'ouverture
     End If
     
@@ -157,6 +160,10 @@ Sub MYP_JSON_Decode()
 
 'V1.7 : optimisation : retrait de la mise à jour de l'affichage
     Application.ScreenUpdating = False
+    Dim oldStatusBar As Boolean
+    oldStatusBar = Application.DisplayStatusBar
+    Application.DisplayStatusBar = True
+    Application.StatusBar = "Traitement des données en cours, patience..."
     
 ' V1.6 : stockage dans un tableau interne (que l'on vide d'abord) de tous les trajets déjà dans l'Excel
     For i = 1 To G_Nb_Trajets_Max
@@ -272,50 +279,66 @@ Sub MYP_JSON_Decode()
         .Apply
     End With
     
-    ws.Cells(1, 1).Select
-    
+    ws.Cells(1, 4).Select
+        
 ' V1.7 : mise en place du formatage par colonne
 ' Colonne VIN
-    ws.Range(ws.Cells(L_Premiere_Valeur, C_vin), ws.Cells(L_Premiere_Valeur, C_vin)).Select
-    ws.Range(Selection, Selection.End(xlDown)).Select
-    With Selection
-        .Font.Size = 8
-        .NumberFormat = "General"
-    End With
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_vin, f_size:=8
+    'ws.Range(ws.Cells(L_Premiere_Valeur, C_vin), ws.Cells(L_Premiere_Valeur, C_vin).End(xlDown)).Font.Size = 8
+     
+    'Formater_Cellules cell:=ws.Cells(L_Premiere_Valeur, C_vin)
 ' Colonne Date départ
-    Range(Cells(L_Premiere_Valeur, C_date_dep), Cells(L_Premiere_Valeur, C_date_dep)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormat = "dd/mm/yy - hh:mm"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_date_dep, n_format:="date"
+    'Range(Cells(L_Premiere_Valeur, C_date_dep), Cells(L_Premiere_Valeur, C_date_dep)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormat = "dd/mm/yy - hh:mm"
 ' Colonne Date Arrivée
-    Range(Cells(L_Premiere_Valeur, C_date_arr), Cells(L_Premiere_Valeur, C_date_arr)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormat = "dd/mm/yy - hh:mm"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_date_arr, n_format:="date"
+    'Range(Cells(L_Premiere_Valeur, C_date_arr), Cells(L_Premiere_Valeur, C_date_arr)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormat = "dd/mm/yy - hh:mm"
 ' Colonne Durée
-    Range(Cells(L_Premiere_Valeur, C_duree), Cells(L_Premiere_Valeur, C_duree)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormat = "h:mm"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_duree, n_format:="duree"
+    'Range(Cells(L_Premiere_Valeur, C_duree), Cells(L_Premiere_Valeur, C_duree)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormat = "h:mm"
 ' Colonne Distance
-    Range(Cells(L_Premiere_Valeur, C_dist), Cells(L_Premiere_Valeur, C_dist)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormatLocal = "0,0"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist, n_format:="1"
+    'Range(Cells(L_Premiere_Valeur, C_dist), Cells(L_Premiere_Valeur, C_dist)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormatLocal = "0,0"
 ' Colonne Distance totale
-    Range(Cells(L_Premiere_Valeur, C_dist_tot), Cells(L_Premiere_Valeur, C_dist_tot)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormatLocal = "0"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist_tot, n_format:="0"
+    'Range(Cells(L_Premiere_Valeur, C_dist_tot), Cells(L_Premiere_Valeur, C_dist_tot)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormatLocal = "0"
 ' Colonne conso
-    Range(Cells(L_Premiere_Valeur, C_conso), Cells(L_Premiere_Valeur, C_conso)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormatLocal = "0,00"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso, n_format:="2"
+    'Range(Cells(L_Premiere_Valeur, C_conso), Cells(L_Premiere_Valeur, C_conso)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormatLocal = "0,00"
 ' Colonne conso moyenne
-    Range(Cells(L_Premiere_Valeur, C_conso_moy), Cells(L_Premiere_Valeur, C_conso_moy)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormatLocal = "0,0"
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso_moy, n_format:="1"
+    'Range(Cells(L_Premiere_Valeur, C_conso_moy), Cells(L_Premiere_Valeur, C_conso_moy)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormatLocal = "0,0"
 ' Colonne niveau carburant
-    Range(Cells(L_Premiere_Valeur, C_niv_carb), Cells(L_Premiere_Valeur, C_niv_carb)).Select
-    Range(Selection, Selection.End(xlDown)).Select
-    Selection.NumberFormat = "0 %"
-
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_niv_carb, n_format:="%"
+    'Range(Cells(L_Premiere_Valeur, C_niv_carb), Cells(L_Premiere_Valeur, C_niv_carb)).Select
+    'Range(Selection, Selection.End(xlDown)).Select
+    'Selection.NumberFormat = "0 %"
+' Colonne adresse Départ
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_pos_dep_adr, n_format:="add"
+' Colonne adresse Arrivée
+    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_pos_arr_adr, n_format:="add"
+    
+   ' On recalcule le nombre de trajets présent dans le tableau : ce nombre tient compte de tous les trajets affichés, ceux initialement présent avant l'import + ceux importés.
+   ' On compte combien il y a d'ID de trajet
+    nbTrip = ws.Range(ws.Cells(L_Premiere_Valeur, C_id), ws.Cells(L_Premiere_Valeur, C_id).End(xlDown)).Count
     EcrireValeurFormat cell:=ws.Range(CELL_nb_trips), val:=nbTrip, f_size:=12                   ' On écrit le nombre de trajet
+    
+    ' On récupère le kilométrage final du dernier trajer vu qu'il n'est plus forcément récupéré si on charge un fichier de donnée où il n'y a pas de nouveaux trajets
+    kilometrage = ws.Cells(nbTrip + L_Premiere_Valeur - 1, C_dist_tot).Value
     EcrireValeurFormat cell:=ws.Range(CELL_km), val:=kilometrage, n_format:="0", f_size:=12     ' On écrit le kilométrage total de la voiture
     
     ' Calcul de la consommation totale du tableau
@@ -326,17 +349,17 @@ Sub MYP_JSON_Decode()
     ' On écrit la valeur calculée de la consommation totale de tous les trajets
     EcrireValeurFormat cell:=ws.Range(CELL_conso_tot), val:=ws.Application.WorksheetFunction.Sum(ws.Range("H5:H" & j)), n_format:="2", f_size:=12
     
-    'ws.Range(CELL_conso_tot) = conso_totale   ' On a maintenant la consommation totale de tous les trajets
-    'ws.Range(CELL_conso_tot).NumberFormatLocal = "0,00"
-    
     ws.Range(CELL_conso_tot_moy).NumberFormatLocal = "0,0"
     
 'V1.7 : optimisation : remise de la mise à jour de l'affichage
     Application.ScreenUpdating = True
+    Application.StatusBar = False
+    Application.DisplayStatusBar = oldStatusBar
+    
 End Sub
 
 
-Private Sub Formater_Cellules(cell As Variant, Optional n_format As String = "General", Optional f_size As Integer = 10, Optional wrap As Boolean = False)
+Private Sub Formater_Cellules(WS_tmp As Worksheet, ligne_cell As Variant, colonne_cell As Variant, Optional n_format As String = "General", Optional f_size As Integer = 10, Optional wrap As Boolean = False)
     ' Fonction pour écrire une valeur dans une cellule
     ' Arguments obligatoires :  cellule As Variant  <- La cellule ou plage de cellule devant être modifié
     ' Arguments optionels :     n_format As String = ""         <- Le format NumberFormat, défaut = "Genral"
@@ -345,40 +368,52 @@ Private Sub Formater_Cellules(cell As Variant, Optional n_format As String = "Ge
     '                                                           <- Valeurs = "0" pour format numérique Local sans virgule
     '                                                           <- Valeurs = "1" pour format numérique Local avec 1 chiffre après la virgule
     '                                                           <- Valeurs = "2" pour format numérique Local avec 2 chiffres après la virgule
+    '                                                           <- Valeurs = "add" pour les adresses
     '                           font_size As Integer = 10       <- La taille de caractère, défaut = 10
     '                           wrap As Boolean = False         <- Retour à la ligne dans la cellule, défaut = faux
-    With cell
+    
+    
         
-        Select Case n_format
-            Case "date"
-                .NumberFormat = "dd/mm/yy - hh:mm"
-            Case "duree"
-                .NumberFormat = "h:mm"
-            Case "0"
-                .NumberFormatLocal = "0"
-            Case "1"
-                .NumberFormatLocal = "0,0"
-            Case "2"
-                .NumberFormatLocal = "0,00"
-            Case "%"
-                .NumberFormat = "0 %"
-            Case Else
-                NumberFormat = "General"
-        End Select
-        
-        If (f_size <> 10) Then
-            .Font.Size = f_size
-        Else
-            .Font.Size = 10
-        End If
-        
-        If (wrap = True) Then
-            .WrapText = True
-        Else
-            .WrapText = False
-        End If
-        
-    End With
+
+    'WS_tmp.Range(cellules, cellules.End(xlDown)
+       
+    Select Case n_format
+        Case "date"
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "dd/mm/yy - hh:mm"
+        Case "duree"
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "h:mm"
+        Case "0"
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0"
+        Case "1"
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0,0"
+        Case "2"
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0,00"
+        Case "%"
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "0 %"
+        Case Else
+            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "General"
+    End Select
+    
+    If n_format = "add" Then        ' Il faut vérifier si on est sur un champ adresse car pour l'adresse il faut aligner à gauche xlHAlignLeft
+        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignLeft
+    Else
+        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignCenter
+    End If
+    ' Dans tous les cas, le VerticalAlignment est à xlVAlignCenter
+    WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).VerticalAlignment = xlVAlignCenter
+    
+'    If (f_size <> 10) Then
+'        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = f_size
+'    Else
+'        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = 10
+'    End If
+    WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = f_size
+    
+    If (wrap = True) Then
+        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).WrapText = True
+    Else
+        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).WrapText = False
+    End If
     
 End Sub
 
@@ -412,7 +447,7 @@ Private Sub EcrireValeurFormat(cell As Variant, val As Variant, Optional n_forma
             Case "%"
                 .NumberFormat = "0 %"
             Case Else
-                NumberFormat = "General"
+                .NumberFormat = "General"
         End Select
         
         If (f_size <> 10) Then
