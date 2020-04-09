@@ -3,9 +3,10 @@ Attribute VB_Name = "Module1"
 '                   GNU AFFERO GENERAL PUBLIC LICENSE
 '                      Version 3, 19 November 2007
 '
-' Dépôt GitHub : https://github.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/blob/master/LICENSE.md
+' Dépôt GitHub : https://github.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot
 '
-' @author MilesTEG1@gmail.com
+' @authors :    MilesTEG1@gmail.com
+'               W13 ( https://www.forum-peugeot.com )
 ' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
 '
 '
@@ -43,7 +44,8 @@ Const CELL_plage_1ereligne  As String = "A" & L_Premiere_Valeur & ":Q" & L_Premi
 Const CELL_plage_max_Donnees As String = "A" & L_Premiere_Valeur & ":Q65536"    ' La plage de données maximale possible
 Const CELL_plage_max_COL_vin As String = "A" & L_Premiere_Valeur & ":A65536"    ' La plage de données maximale possible
 Const CELL_plage_max_COL_id As String = "B" & L_Premiere_Valeur & ":B65536"    ' La plage de données maximale possible
-
+' La formule qui permet de calculer la consommation moyenne, qui doit être : =SI(L1=0;"Non dispo.";L1/(H2-G5)*100)
+Const FORMULE_calcul_Conso_tot_moy As Variant = "=SI(" & CELL_conso_tot & "=0;""Non dispo."";" & CELL_conso_tot & "/(H2-G5)*100)"
 ' V1.5 : MultiVIN
 Const G_Nb_VIN_Max = 20                     ' Nb VIN max traité par cette macro
 Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par cette macro
@@ -102,8 +104,7 @@ Sub MYP_JSON_Decode()
         ChDir CheminFichier     ' Le chemin du fichier ne contient pas de lien, on change le dossier d'ouverture
     End If
     
-        
-        
+    ' On affiche des infos dans la status-bar
     Dim oldStatusBar As Boolean
     oldStatusBar = Application.DisplayStatusBar
     Application.DisplayStatusBar = True
@@ -361,6 +362,7 @@ Sub MYP_JSON_Decode()
     ' On écrit la valeur calculée de la consommation totale de tous les trajets
     EcrireValeurFormat cell:=ws.Range(CELL_conso_tot), val:=conso_totale, n_format:="2", f_size:=12
     
+    ws.Range(CELL_conso_tot_moy).FormulaLocal = FORMULE_calcul_Conso_tot_moy        ' On réécrit la formule au cas-où... si jamais les cellules sont déplacées :)
     ws.Range(CELL_conso_tot_moy).NumberFormatLocal = "0,0"
     
 'V1.7 : optimisation : remise de la mise à jour de l'affichage
@@ -370,11 +372,12 @@ Sub MYP_JSON_Decode()
     
 End Sub
 
-
 Private Sub Formater_Cellules(WS_tmp As Worksheet, ligne_cell As Variant, colonne_cell As Variant, Optional n_format As String = "General", Optional f_size As Integer = 10, Optional wrap As Boolean = False)
-    ' Fonction pour écrire une valeur dans une cellule
-    ' Arguments obligatoires :  cellule As Variant  <- La cellule ou plage de cellule devant être modifié
-    ' Arguments optionels :     n_format As String = ""         <- Le format NumberFormat, défaut = "Genral"
+    ' Fonction pour écrire formater la valeur dans une cellule ou une plage de cellules
+    ' Arguments obligatoires :  WS_tmp As Worksheet     <- La feuille de calcul où on travail
+    '                           ligne_cell As Variant   <- La ligne de la cellule de départ
+    '                           colonne_cell As Variant <- La colonne de la cellule de départ
+    ' Arguments optionels :     n_format As String = "General"  <- Le format NumberFormat, défaut = "Genral"
     '                                                           <- Valeurs = "date" pour format date
     '                                                           <- Valeurs = "duree" pour format durée
     '                                                           <- Valeurs = "0" pour format numérique Local sans virgule
@@ -383,11 +386,6 @@ Private Sub Formater_Cellules(WS_tmp As Worksheet, ligne_cell As Variant, colonn
     '                                                           <- Valeurs = "add" pour les adresses
     '                           font_size As Integer = 10       <- La taille de caractère, défaut = 10
     '                           wrap As Boolean = False         <- Retour à la ligne dans la cellule, défaut = faux
-    
-    
-        
-
-    'WS_tmp.Range(cellules, cellules.End(xlDown)
        
     Select Case n_format
         Case "date"
@@ -433,7 +431,7 @@ Private Sub EcrireValeurFormat(cell As Variant, val As Variant, Optional n_forma
     ' Fonction pour écrire une valeur dans une cellule
     ' Arguments obligatoires :  cellule As Variant  <- La cellule ou plage de cellule devant être modifiée
     '                           val As Variant      <- La valeur à écrire dans la cellule/plage
-    ' Arguments optionels :     n_format As String = ""         <- Le format NumberFormat, défaut = "Genral"
+    ' Arguments optionels :     n_format As String = "General"  <- Le format NumberFormat, défaut = "Genral"
     '                                                           <- Valeurs = "date" pour format date
     '                                                           <- Valeurs = "duree" pour format durée
     '                                                           <- Valeurs = "0" pour format numérique Local sans virgule
