@@ -6,7 +6,7 @@ Attribute VB_Name = "Module1"
 ' Dépôt GitHub : https://github.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot
 '
 ' @authors :    MilesTEG1@gmail.com
-'               W13 ( https://www.forum-peugeot.com )
+'               W13-FP ( W13 sur https://www.forum-peugeot.com )
 ' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
 '
 '
