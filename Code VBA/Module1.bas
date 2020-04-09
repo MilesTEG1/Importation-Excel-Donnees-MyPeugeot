@@ -7,9 +7,6 @@ Attribute VB_Name = "Module1"
 '
 ' @author MilesTEG1@gmail.com
 ' @license  AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.fr.html)
-
-
-
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
@@ -40,7 +37,11 @@ Const CELL_conso_tot_moy    As String = "L2"    ' Cellule qui contiendra la cons
 Const CELL_plage_donnees    As String = "A" & L_premiere_valeur & ":Q20000" ' Plage de cellules contenant les données
 Const CELL_plage_conso_tot  As String = "H" & L_premiere_valeur & ":H"      ' Cellule qui contiendra le kilométrage actuel de la voiture
 
-Const VERSION As String = "Version du fichier" & vbLf & "v1.4"    ' Version du fchier
+' V1.5 : MultiVIN
+Const G_Nb_VIN_Max = 20                     ' Nb VIN max traité par cette macro
+Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par cette macro
+
+Const VERSION As String = "Version du fichier" & vbLf & "v1.6"    ' Version du fchier
 Const CELL_ver As String = "D1:D2"     ' Cellule où afficher la version du fichier
 '
 ' Fin de déclaration des constantes
@@ -52,7 +53,7 @@ Const CELL_ver As String = "D1:D2"     ' Cellule où afficher la version du fichi
 Sub MYP_JSON_Decode()
     Dim jsonText As String
     Dim jsonObject As Object, item As Object, item_item As Object
-    Dim i As Long
+    Dim i, j, k As Long
     Dim ws As Worksheet
     
     Dim FSO As New FileSystemObject
@@ -63,6 +64,18 @@ Sub MYP_JSON_Decode()
     Dim kilometrage As Single   ' Pour stocker le kilométrage total de la voiture.
     Dim conso_totale As Single  ' Pour stocker la consommation totale de tout le tableau
     
+' V1.5 : pour MultiVIN
+    Dim l_Tab_Vin As Integer                 ' pour boucle sur les vin
+    Dim Nb_VIN As Integer                    ' Nb VIN trouvés dans le fichier .myp
+    Dim Liste_VIN(G_Nb_VIN_Max, 2) As String ' Tableau interne des VIN trouvés (col 1 = vin, col 2 = retenu)
+    Dim VIN_Actuel As String                 ' VIN associé à la boucle des trajets
+    Dim VIN_A_Traiter As Boolean
+' V1.6 : pour ne pas effacer les données au début
+    Dim T_Trajets_existants(G_Nb_Trajets_Max) As String ' Tableau des trajets trouvés existants dans l'onglet
+    Dim Derniere_Ligne_remplie As Integer               ' Numéro de la dernière ligne avec des données
+    Dim Nb_Trajets As Long
+    Dim Trajet_Trouvé As Boolean
+    
     Set ws = Worksheets("Trajets-MyPeugeot")
     EcrireValeurFormat cell:=ws.Range(CELL_ver), val:=VERSION, f_size:=10, wrap:=True
     
@@ -70,125 +83,209 @@ Sub MYP_JSON_Decode()
     
     FichierMYP = Application.GetOpenFilename("Fichiers trajets Peugeot App (*.myp),*.myp,Fichiers trajets Citroen App (*.myc),*.myc,Fichiers trajets DS App (*.myd),*.myd")  ' On demande la sélection du fichier
     If FichierMYP = False Then
-        MsgBox "Aucun fichier n'a été selectionné !"
+        MsgBox "Aucun fichier n'a été selectionné !", vbCritical
         Exit Sub
-    Else
-        Set JsonTS = FSO.OpenTextFile(FichierMYP, ForReading)
-        jsonText = JsonTS.ReadAll
-        JsonTS.Close
-    
-        ' Comme le fichier existe, on efface tout
-        Effacage_Donnees
-        
-        nbTrip = 0    ' On réinitialise le nombre de trajets
-    
-        EcrireValeurFormat cell:=ws.Range(CELL_fichierMYP), val:=FichierMYP, wrap:=True
-        
     End If
+    Set JsonTS = FSO.OpenTextFile(FichierMYP, ForReading)
+    jsonText = JsonTS.ReadAll
+    JsonTS.Close
     
-  
+    ' Comme le fichier existe, on efface tout
+    ' Effacage_Donnees     retiré en 1.6
+    
+    nbTrip = 0    ' On réinitialise le nombre de trajets
+    EcrireValeurFormat cell:=ws.Range(CELL_fichierMYP), val:=FichierMYP, wrap:=True
     Set jsonObject = JsonConverter.ParseJson(jsonText)
     
+    ' Recherche de tous les VIN
+    Nb_VIN = 0
+    For Each item In jsonObject
+        If item("vin") <> "" Then
+            Nb_VIN = Nb_VIN + 1
+            Liste_VIN(Nb_VIN, 1) = item("vin")
+            Liste_VIN(Nb_VIN, 2) = False
+        End If
+    Next
+    
+    ' Si aucun VIN dans le fichier myp, on sort !
+    If Nb_VIN = 0 Then
+        MsgBox "Aucun VIN trouvé dans votre fichier .myp. Pb de structure ?", vbCritical
+        Exit Sub
+    End If
+    
+    ' Affichage de la forme de choix des VIN à importer, seulement si plus de 1 VIN. Sinon, celui-ci devient défaut
+    If Nb_VIN > 1 Then
+        ' Remise à zéro de la liste des choix
+        For l_Tab_Vin = FormeVIN.FormeVIN_ListeVIN.ListCount - 1 To 0 Step -1
+            FormeVIN.FormeVIN_ListeVIN.RemoveItem (l_Tab_Vin)
+        Next l_Tab_Vin
         
-    i = L_premiere_valeur   ' On défini un compteur qui sert à se positionner sur la ligne où les données doivent être écrites.
+        ' Ajout des VIN trouvés
+        For l_Tab_Vin = 1 To Nb_VIN
+          FormeVIN.FormeVIN_ListeVIN.AddItem (Liste_VIN(l_Tab_Vin, 1))
+        Next l_Tab_Vin
+        
+        ' activation de la forme de choix des VIN
+        FormeVIN.Show
+        
+        ' Si bouton annuler = on quitte la procédure
+        If FormeVIN.BoutonChoisi.Value = 2 Then
+          MsgBox "Vous avez annulé. On quitte !", vbCritical
+          Exit Sub
+        End If
+        ' On parcourt la liste pour récupérer les VIN sélectionnés
+        For l_Tab_Vin = 0 To FormeVIN.FormeVIN_ListeVIN.ListCount - 1
+          If FormeVIN.FormeVIN_ListeVIN.Selected(l_Tab_Vin) Then
+            Liste_VIN(l_Tab_Vin + 1, 2) = True
+          End If
+        Next
+    Else  ' cas 1 seul VIN présent dans le fichier
+        Liste_VIN(1, 2) = True
+    End If
+
+' V1.6 : stockage dans un tableau interne (que l'on vide d'abord) de tous les trajets déjà dans l'Excel
+    For i = 1 To G_Nb_Trajets_Max
+        T_Trajets_existants(i) = ""
+    Next i
+    Derniere_Ligne_remplie = Cells(Columns(1).Cells.Count, 1).End(xlUp).Row
+    Nb_Trajets = 0
+    For i = L_premiere_valeur To Derniere_Ligne_remplie
+        T_Trajets_existants(i - L_premiere_valeur + 1) = ws.Cells(i, C_vin) & ";" & ws.Cells(i, C_id)
+        Nb_Trajets = Nb_Trajets + 1
+    Next i
+
+    i = L_premiere_valeur + Nb_Trajets   ' On défini un compteur qui sert à se positionner sur la ligne où les données doivent être écrites.
                             ' Le n° de la ligne où on va commencer à écrire les données
                             ' ws.Cells(LIGNE, COLONNE)     Où LIGNE commence à 1
                             '                              Où COLONNE commence à 1 = A
                             ' On va utiliser les constantes définie avant la fonction pour écrire/formater/effacer une cellule
                             
-                            
     For Each item In jsonObject
-        
-        For Each item_item In item("trips")   ' Boucle pour récupérer les trajets
-            
-            Dim MaDate_UNIX_GMT_dep As Long, MaDate_DST_dep As Date  ' Pour convertir la date unix de départ en date excel
-            Dim MaDate_UNIX_GMT_arr As Long, MaDate_DST_arr As Date  ' Pour convertir la date unix d'arrivée en date excel
-            Dim duree_trajet As Long, duree_trajet_bis As Date
-            Dim distance_trajet As Single, conso_trajet As Single, niveau_carb As Single
-                                              
-'            With ws.Cells(i, C_vin)
-'                .Value = item("vin")   ' On écrit le VIN récupéré
-'                .Font.Size = 8
-'                .NumberFormat = "General"
-'            End With
-            
-            EcrireValeurFormat cell:=ws.Cells(i, C_vin), val:=item("vin"), f_size:=8    ' On écrit le VIN récupéré
-            EcrireValeurFormat cell:=ws.Cells(i, C_id), val:=item_item("id")            ' On écrit l'ID récupéré
-            
-            ' Récupération des dates
-            ' On stocke les deux dates (départ et arrivée) car il faut déterminer le temps de parcours
-            ' qui ne doit pas être dépendant d'un éventuelle changement d'heure en cours de route
-            MaDate_UNIX_GMT_dep = item_item("startDateTime")            ' Date de départ
-            MaDate_UNIX_GMT_arr = item_item("endDateTime")              ' Date d'arrivée
-            MaDate_DST_dep = Date_UNIX_To_Date_DST(MaDate_UNIX_GMT_dep)
-            MaDate_DST_arr = Date_UNIX_To_Date_DST(MaDate_UNIX_GMT_arr)
-            
-            EcrireValeurFormat cell:=ws.Cells(i, C_date_dep), val:=MaDate_DST_dep, n_format:="date"
-            EcrireValeurFormat cell:=ws.Cells(i, C_date_arr), val:=MaDate_DST_arr, n_format:="date"
-            
-            ' Calcul de la durée du trajet en cours
-            duree_trajet = MaDate_UNIX_GMT_arr - MaDate_UNIX_GMT_dep
-            duree_trajet_bis = Date_UNIX_To_Date_GMT(MaDate_UNIX_GMT_arr) - Date_UNIX_To_Date_GMT(MaDate_UNIX_GMT_dep)
-            
-            EcrireValeurFormat cell:=ws.Cells(i, C_duree), val:=duree_trajet_bis, n_format:="duree"
-            
-            distance_trajet = item_item("endMileage") - item_item("startMileage")
-            EcrireValeurFormat cell:=ws.Cells(i, C_dist), val:=distance_trajet, n_format:="1"
-            EcrireValeurFormat cell:=ws.Cells(i, C_dist_tot), val:=item_item("endMileage"), n_format:="0"
-            
-            EcrireValeurFormat cell:=ws.Cells(i, C_conso), val:=item_item("consumption"), n_format:="2"
-            conso_trajet = ws.Cells(i, C_conso)
-            'ws.Cells(i, C_conso) = item_item("consumption")
-            'conso_trajet = ws.Cells(i, C_conso)
-            
-            'ws.Cells(i, C_conso).NumberFormatLocal = "0,00"
-            
-            ' Pour le calcul de la consommation moyenne, il faut éviter la division par zéro dans le cas où
-            ' la voiture à tourner à l'arret, la distance parcourue est nulle
-            If distance_trajet <> 0 Then
-                EcrireValeurFormat cell:=ws.Cells(i, C_conso_moy), val:=conso_trajet / distance_trajet * 100, n_format:="1"
-                'ws.Cells(i, C_conso_moy) = conso_trajet / distance_trajet * 100
-                'ws.Cells(i, C_conso_moy).NumberFormatLocal = "0,0"
-            Else
-                EcrireValeurFormat cell:=ws.Cells(i, C_conso_moy), val:="//"
-                'ws.Cells(i, C_conso_moy) = "//"
-                'ws.Cells(i, C_conso_moy).NumberFormat = "General"
+' V1.5 : 1ère vérif à faire : que le VIN du trajet soit dans les VIN à importer
+        VIN_Actuel = item("vin")
+        VIN_A_Traiter = False
+        For l_Tab_Vin = 1 To Nb_VIN
+            If Liste_VIN(l_Tab_Vin, 1) = VIN_Actuel Then
+                VIN_A_Traiter = Liste_VIN(l_Tab_Vin, 2)
             End If
-
-            EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_lat), val:=item_item("startPosLatitude")
-            EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_long), val:=item_item("startPosLongitude")
-                        
-            Dim adresse_dep As String, adresse_arr As String
-            adresse_dep = item_item("startPosAddress")
-            EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_adr), val:=Correction_Adresse(adresse_dep)
-            
-            EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_lat), val:=item_item("endPosLatitude")
-            EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_long), val:=item_item("endPosLongitude")
-            
-            adresse_arr = item_item("endPosAddress")
-            EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_adr), val:=Correction_Adresse(adresse_arr)
-            
-            EcrireValeurFormat cell:=ws.Cells(i, C_niv_carb), val:=item_item("fuelLevel") / 100, n_format:="%"
-
-            EcrireValeurFormat cell:=ws.Cells(i, C_auto), val:=item_item("fuelAutonomy")
-            
-            i = i + 1
-            nbTrip = nbTrip + 1
-
-            kilometrage = item_item("endMileage")   ' On stocke le kilométrage de fin de trajet pour être affiché en tant que kilométrage actuel lors du dernier trajet
-            
-        Next
+        Next l_Tab_Vin
+      
+' V1.5 : on ne traite les trajets QUE SI Vin_A_Traiter est vrai
+        If VIN_A_Traiter Then
+            For Each item_item In item("trips")   ' Boucle pour récupérer les trajets
+                
+                Dim MaDate_UNIX_GMT_dep As Long, MaDate_DST_dep As Date  ' Pour convertir la date unix de départ en date excel
+                Dim MaDate_UNIX_GMT_arr As Long, MaDate_DST_arr As Date  ' Pour convertir la date unix d'arrivée en date excel
+                Dim duree_trajet As Long, duree_trajet_bis As Date
+                Dim distance_trajet As Single, conso_trajet As Single, niveau_carb As Single
+                                              
+' V1.6 : à ne faire que si VIN et Id n'étaient pas déjà présents
+                Trajet_Trouvé = False
+                For j = 1 To Nb_Trajets
+                    If T_Trajets_existants(j) = VIN_Actuel & ";" & item_item("id") Then
+                        Trajet_Trouvé = True
+                        Exit For
+                    End If
+                Next j
+                If Not Trajet_Trouvé Then
+                    With ws.Cells(i, C_vin)
+                        .Value = VIN_Actuel   ' On écrit le VIN récupéré
+                        .Font.Size = 8
+                        .NumberFormat = "General"
+                    End With
+                
+                    EcrireValeurFormat cell:=ws.Cells(i, C_vin), val:=VIN_Actuel, f_size:=8    ' On écrit le VIN récupéré
+                    EcrireValeurFormat cell:=ws.Cells(i, C_id), val:=item_item("id")            ' On écrit l'ID récupéré
+                    
+                    ' Récupération des dates
+                    ' On stocke les deux dates (départ et arrivée) car il faut déterminer le temps de parcours
+                    ' qui ne doit pas être dépendant d'un éventuelle changement d'heure en cours de route
+                    MaDate_UNIX_GMT_dep = item_item("startDateTime")            ' Date de départ
+                    MaDate_UNIX_GMT_arr = item_item("endDateTime")              ' Date d'arrivée
+                    MaDate_DST_dep = Date_UNIX_To_Date_DST(MaDate_UNIX_GMT_dep)
+                    MaDate_DST_arr = Date_UNIX_To_Date_DST(MaDate_UNIX_GMT_arr)
+                    
+                    EcrireValeurFormat cell:=ws.Cells(i, C_date_dep), val:=MaDate_DST_dep, n_format:="date"
+                    EcrireValeurFormat cell:=ws.Cells(i, C_date_arr), val:=MaDate_DST_arr, n_format:="date"
+                    
+                    ' Calcul de la durée du trajet en cours
+                    duree_trajet = MaDate_UNIX_GMT_arr - MaDate_UNIX_GMT_dep
+                    duree_trajet_bis = Date_UNIX_To_Date_GMT(MaDate_UNIX_GMT_arr) - Date_UNIX_To_Date_GMT(MaDate_UNIX_GMT_dep)
+                    
+                    EcrireValeurFormat cell:=ws.Cells(i, C_duree), val:=duree_trajet_bis, n_format:="duree"
+                    
+                    distance_trajet = item_item("endMileage") - item_item("startMileage")
+                    EcrireValeurFormat cell:=ws.Cells(i, C_dist), val:=distance_trajet, n_format:="1"
+                    EcrireValeurFormat cell:=ws.Cells(i, C_dist_tot), val:=item_item("endMileage"), n_format:="0"
+                    
+                    EcrireValeurFormat cell:=ws.Cells(i, C_conso), val:=item_item("consumption"), n_format:="2"
+                    conso_trajet = ws.Cells(i, C_conso)
+                    'ws.Cells(i, C_conso) = item_item("consumption")
+                    'conso_trajet = ws.Cells(i, C_conso)
+                    
+                    'ws.Cells(i, C_conso).NumberFormatLocal = "0,00"
+                    
+                    ' Pour le calcul de la consommation moyenne, il faut éviter la division par zéro dans le cas où
+                    ' la voiture à tourner à l'arret, la distance parcourue est nulle
+                    If distance_trajet <> 0 Then
+                        EcrireValeurFormat cell:=ws.Cells(i, C_conso_moy), val:=conso_trajet / distance_trajet * 100, n_format:="1"
+                        'ws.Cells(i, C_conso_moy) = conso_trajet / distance_trajet * 100
+                        'ws.Cells(i, C_conso_moy).NumberFormatLocal = "0,0"
+                    Else
+                        EcrireValeurFormat cell:=ws.Cells(i, C_conso_moy), val:="//"
+                        'ws.Cells(i, C_conso_moy) = "//"
+                        'ws.Cells(i, C_conso_moy).NumberFormat = "General"
+                    End If
+        
+                    EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_lat), val:=item_item("startPosLatitude")
+                    EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_long), val:=item_item("startPosLongitude")
+                                
+                    Dim adresse_dep As String, adresse_arr As String
+                    adresse_dep = item_item("startPosAddress")
+                    EcrireValeurFormat cell:=ws.Cells(i, C_pos_dep_adr), val:=Correction_Adresse(adresse_dep)
+                    
+                    EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_lat), val:=item_item("endPosLatitude")
+                    EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_long), val:=item_item("endPosLongitude")
+                    
+                    adresse_arr = item_item("endPosAddress")
+                    EcrireValeurFormat cell:=ws.Cells(i, C_pos_arr_adr), val:=Correction_Adresse(adresse_arr)
+                    
+                    EcrireValeurFormat cell:=ws.Cells(i, C_niv_carb), val:=item_item("fuelLevel") / 100, n_format:="%"
+        
+                    EcrireValeurFormat cell:=ws.Cells(i, C_auto), val:=item_item("fuelAutonomy")
+                    
+                    i = i + 1
+                    nbTrip = nbTrip + 1
+        
+                    kilometrage = item_item("endMileage")   ' On stocke le kilométrage de fin de trajet pour être affiché en tant que kilométrage actuel lors du dernier trajet
+' V1.6 : fin du test
+                End If
+            Next
     
-
-            
+' V .1.5 : fin du test
+        End If
     Next
     
+' V1.6 : tri final sur colonnes A puis B
+    ws.Range("A5:Q5").Select
+    ws.Range(Selection, Selection.End(xlDown)).Select
+    ws.Sort.SortFields.Clear
+    ws.Sort.SortFields.Add Key:=Range("A5:A65536"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    ws.Sort.SortFields.Add Key:=Range("B5:B65536"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    With ActiveWorkbook.Worksheets("Trajets-MyPeugeot").Sort
+        .SetRange Range("A5:Q65536")
+        .Header = xlGuess
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    ws.Cells(1, 1).Select
     EcrireValeurFormat cell:=ws.Range(CELL_nb_trips), val:=nbTrip, f_size:=12                   ' On écrit le nombre de trajet
     EcrireValeurFormat cell:=ws.Range(CELL_km), val:=kilometrage, n_format:="0", f_size:=12     ' On écrit le kilométrage total de la voiture
 
     
     ' Calcul de la consommation totale du tableau
-    Dim j As Integer
     j = 4 + nbTrip      ' valeur qui délimite la dernière cellule de la colonne G contenant une consommation
     'Set MaPlage = ws.Range("H5:H" & j)
     'conso_totale = ws.Application.WorksheetFunction.Sum(ws.Range("H5:H" & j))
@@ -457,21 +554,3 @@ Sub test()
     MsgBox "Date UNIX GMT = " & MaDate_GMT & vbCrLf & "Date DST = " & MaDate_DST
 
 End Sub
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
