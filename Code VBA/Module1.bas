@@ -97,6 +97,13 @@ Sub MYP_JSON_Decode()
         ChDir CheminFichier     ' Le chemin du fichier ne contient pas de lien, on change le dossier d'ouverture
     End If
     
+        
+        
+    Dim oldStatusBar As Boolean
+    oldStatusBar = Application.DisplayStatusBar
+    Application.DisplayStatusBar = True
+    Application.StatusBar = "Chargement du fichier en cours..."
+    
     FichierMYP = Application.GetOpenFilename("Fichiers trajets Peugeot App (*.myp),*.myp,Fichiers trajets Citroen App (*.myc),*.myc,Fichiers trajets DS App (*.myd),*.myd")  ' On demande la sélection du fichier
     If FichierMYP = False Then
         MsgBox "Aucun fichier n'a été selectionné !", vbCritical
@@ -105,6 +112,8 @@ Sub MYP_JSON_Decode()
     Set JsonTS = FSO.OpenTextFile(FichierMYP, ForReading)
     jsonText = JsonTS.ReadAll
     JsonTS.Close
+    
+    Application.StatusBar = "Fichier chargé, détection des VIN..."
     
     ' Comme le fichier existe, on efface tout
     ' Effacage_Donnees     retiré en 1.6
@@ -160,9 +169,7 @@ Sub MYP_JSON_Decode()
 
 'V1.7 : optimisation : retrait de la mise à jour de l'affichage
     Application.ScreenUpdating = False
-    Dim oldStatusBar As Boolean
-    oldStatusBar = Application.DisplayStatusBar
-    Application.DisplayStatusBar = True
+
     Application.StatusBar = "Traitement des données en cours, patience..."
     
 ' V1.6 : stockage dans un tableau interne (que l'on vide d'abord) de tous les trajets déjà dans l'Excel
