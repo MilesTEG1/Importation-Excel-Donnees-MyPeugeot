@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Il s'agit d'un fichier excel avec macros (XLSM) qui permet de récupérer les données de l'application MyPeugeot et d'en faire des statistiques.
+Il s'agit d'un fichier excel avec macros (XLSM) qui permet de récupérer les données des applications MyPeugeot, MyCitroën et MyDS et d'en faire des statistiques.
 
 ## Idée
 
@@ -28,7 +28,8 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 
 ## Ce qui fonctionne (à peu près)
 
-Je précise que pour le moment ne fonctionne (encore que chez certains il y a des bugs) que ceci :
-
-* l'importation des données dans la feuille de calcul Trajets-MyPeugeot
-* les quelques calculs fait dedans.
+* Import des fichiers trajets
+* Prise en compte de fichiers avec plusieurs VIN
+* Sélection des VIN affichés via un filtre Excel
+* Calcul des moyennes et autres informations par VIN ou un ensemble de VIN (filtre sur tableau croisé dynamique Excel)
+* Ajout des nouveaux trajets, sans remise à 0 initiale
