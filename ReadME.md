@@ -33,3 +33,5 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 * Sélection des VIN affichés via un filtre Excel
 * Calcul des moyennes et autres informations par VIN ou un ensemble de VIN (filtre sur tableau croisé dynamique Excel)
 * Ajout des nouveaux trajets, sans remise à 0 initiale
+* Utilisation d'une page d'accueil listant les VINs importés avec une correspondance d'un véhicule
+* La page d'accueil contient le TCD
