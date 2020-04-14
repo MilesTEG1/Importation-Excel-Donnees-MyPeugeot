@@ -34,4 +34,6 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 * Calcul des moyennes et autres informations par VIN ou un ensemble de VIN (filtre sur tableau croisé dynamique Excel)
 * Ajout des nouveaux trajets, sans remise à 0 initiale
 * Utilisation d'une page d'accueil listant les VINs importés avec une correspondance d'un véhicule
-* La page d'accueil contient le TCD
+* La page d'accueil contient le TCD et les boutons pour lancer les macros
+
+![Feuille d'accueil](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/Feuille%20d'accueil.png)
