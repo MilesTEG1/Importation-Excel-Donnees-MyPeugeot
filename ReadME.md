@@ -26,6 +26,8 @@ Le fichier utilisé est normalement déjà inclus dans le fichier excel.
 Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin d'ouvrir le fichier et l'utiliser.  
 ![Référence à ajouter VBA](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/R%C3%A9f%C3%A9rence%20%C3%A0%20Ajouter%20au%20projet%20VBA.png)
 
+---
+
 ## Ce qui fonctionne (à peu près)
 
 * Import des fichiers trajets
@@ -37,8 +39,6 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 * La page d'accueil contient le TCD et les boutons pour lancer les macros
 
 ![Feuille d'accueil](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/Feuille%20d'accueil.png)
-
-
 
 ---
 
