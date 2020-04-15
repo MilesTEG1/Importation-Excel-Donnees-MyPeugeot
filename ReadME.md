@@ -60,3 +60,4 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
   - [ ] idem pour le volume de carburant
 - [ ] Importer tous les champs non-importés ?
 - [ ] Faire une version qui exporte les données dans un fichier JSON pour MyPeugeot, MyCytroen, MyDS
+- [ ] Nettoyer le code de tous les commentaires inutiles de code inutilisé quand le code sera stabilisé
