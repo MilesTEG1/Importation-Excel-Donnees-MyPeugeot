@@ -37,3 +37,20 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 * La page d'accueil contient le TCD et les boutons pour lancer les macros
 
 ![Feuille d'accueil](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/Feuille%20d'accueil.png)
+
+
+# To do
+- [ ] Post to Hacker News
+- [ ] Share HN post on Twitter
+
+
+## Next
+- [ ] Raise $1MM
+- [ ] Retire
+
+
+## New: Nested TODOs
+- [ ] Top level task
+    - [ ] Subtask 1
+    - [ ] Subtask 2
+    - [ ] Subtask 3
