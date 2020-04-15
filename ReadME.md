@@ -58,6 +58,5 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
   - [ ] Kilométrage de départ du tajet i = Kilométrage d'arrivée du trajet i-1
   - [ ] Kilométrage d'arrivée du tajet i = Kilométrage de départ du trajet i+1
   - [ ] idem pour le volume de carburant
-- [ ] - [ ] Importer tous les champs non-importés ?
+- [ ] Importer tous les champs non-importés ?
 - [ ] Faire une version qui exporte les données dans un fichier JSON pour MyPeugeot, MyCytroen, MyDS
-- [ ] 
