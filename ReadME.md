@@ -46,9 +46,9 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 
 # To-do (priorité)
 
-- [ ] Renommer la feuille "Trajets-MyPeugeot" en "Trajets"
+- [x] Renommer la feuille "Trajets-MyPeugeot" en "Trajets"
 - [ ] Recruter des testeurs de l'app MyCytroen et MyDS
-- [ ] Tenir compte des noms déjà présent de véhicule pour proposer un nom par défaut de type "Ma voiture 1" ; "Ma voiture 2" ; etc ...
+- [x] Tenir compte des noms déjà présent de véhicule pour proposer un nom par défaut de type "Ma voiture 1" ; "Ma voiture 2" ; etc ...
 - [ ] Augmenter la taille du nombre de VIN possible (tableau [M;N])
 
 ## Next (ensuite)
