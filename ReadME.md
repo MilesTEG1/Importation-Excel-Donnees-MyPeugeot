@@ -39,18 +39,25 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 ![Feuille d'accueil](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/Feuille%20d'accueil.png)
 
 
-# To do
-- [ ] Post to Hacker News
-- [ ] Share HN post on Twitter
 
+---
 
-## Next
-- [ ] Raise $1MM
-- [ ] Retire
+# To-do (priorité)
 
+- [ ] Renommer la feuille "Trajets-MyPeugeot" en "Trajets"
+- [ ] Recruter des testeurs de l'app MyCytroen et MyDS
+- [ ] Tenir compte des noms déjà présent de véhicule pour proposer un nom par défaut de type "Ma voiture 1" ; "Ma voiture 2" ; etc ...
+- [ ] Augmenter la taille du nombre de VIN possible (tableau [M;N])
 
-## New: Nested TODOs
-- [ ] Top level task
-    - [ ] Subtask 1
-    - [ ] Subtask 2
-    - [ ] Subtask 3
+## Next (ensuite)
+
+- [ ] Refaire tous les graphiques
+- [ ] Reconstruire certaines infos manquante en cas de trajets manquants :
+  - [ ] Adresse de départ du tajet i = adresse d'arrivée du trajet i-1
+  - [ ] Adresse de départ du tajet i = adresse de départ du trajet i+1
+  - [ ] Kilométrage de départ du tajet i = Kilométrage d'arrivée du trajet i-1
+  - [ ] Kilométrage d'arrivée du tajet i = Kilométrage de départ du trajet i+1
+  - [ ] idem pour le volume de carburant
+- [ ] - [ ] Importer tous les champs non-importés ?
+- [ ] Faire une version qui exporte les données dans un fichier JSON pour MyPeugeot, MyCytroen, MyDS
+- [ ] 
