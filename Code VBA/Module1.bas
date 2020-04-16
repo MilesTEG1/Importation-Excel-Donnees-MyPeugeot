@@ -16,6 +16,8 @@ Attribute VB_Name = "Module1"
 '       - V 1.8 : Tableau croisé dynamique et form information avancement
 '       - V 1.9 : Gestion des VIN déjà connus
 '       - V 1.9.1 : Correction de quelques bugs, et amélioration de la feuille Accueil
+'       - V 1.9.2 : Correction de quelques bugs
+'       - V 1.9.3 : Correction de quelques bugs + Ajout de la dernière adresse d'arrivée connue pour le VIN sélectionné
 '
 ' Couples de versions d'Excel & OS testées :
 '       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (build 12624.20382)
@@ -26,7 +28,7 @@ Option Explicit     ' On force à déclarer les variables
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-' Constantes pour la feuille "Trajets-MyPeugeot"
+' Constantes pour la feuille "Trajets"
 Const L_Premiere_Valeur As Integer = 3      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
 Const C_vin             As Integer = 1      ' COLONNE = 1 (A) -> VIN pour le trajet (il est possible d'avoir plusieurs VIN dans le fichier de donnée).
 Const C_id              As Integer = 2      '         = 2 (B) -> Trip ID#
@@ -40,35 +42,32 @@ Const C_conso_moy       As Integer = 9      '         = 9 (I) -> Consommation mo
 Const C_pos_dep_lat     As Integer = 10     '         = 10 (J) -> Position de départ - Latitude
 Const C_pos_dep_long    As Integer = 11     '         = 11 (K) -> Position de départ - Longitude
 Const C_pos_dep_adr     As Integer = 12     '         = 12 (L) -> Position de départ - Adresse
-Const C_pos_arr_lat     As Integer = 13     '         = 13 (M) -> Position d'arrivée - Latitude
-Const C_pos_arr_long    As Integer = 14     '         = 14 (N) -> Position d'arrivée - Longitude
-Const C_pos_arr_adr     As Integer = 15     '         = 15 (O) -> Position d'arrivée - Adresse
 Const C_niv_carb        As Integer = 16     '         = 16 (P) -> Niveau de carburant en %
 Const C_auto            As Integer = 17     '         = 17 (Q) -> Autonomie restante en km
-'Const CELL_vin_entete   As String = "B" & (L_Premiere_Valeur - 3)    ' Cellule qui contiendra le VIN associé aux données de l'en-tête
-'Const CELL_nb_trips     As String = "H" & (L_Premiere_Valeur - 3)    ' Cellule qui contiendra le nombre de trajets totale (tous VIN confondus)
 Const CELL_fichierMYP   As String = "G" & (L_Premiere_Valeur - 2)  ' Cellule qui contiendra le nom du fichier importé
-'Const CELL_km           As String = "H" & (L_Premiere_Valeur - 2)   ' Cellule qui contiendra le kilométrage actuel de la voiture
-'Const CELL_conso_tot    As String = "L" & (L_Premiere_Valeur - 3)   ' Cellule qui contiendra la consommation totale en L
-'Const CELL_conso_tot_moy    As String = "L" & (L_Premiere_Valeur - 2)   ' Cellule qui contiendra la consommation moyenne totale pour tous les trajets
 Const CELL_plage_donnees    As String = "A" & L_Premiere_Valeur & ":Q40000" ' Plage de cellules contenant les données
-'Const CELL_plage_conso_tot  As String = "H" & L_Premiere_Valeur & ":H"      ' Cellule qui contiendra le kilométrage actuel de la voiture
 Const CELL_plage_1ereligne  As String = "A" & L_Premiere_Valeur & ":Q" & L_Premiere_Valeur  ' Toute la 1ere ligne de donnée pour en faire le tri
 Const CELL_plage_max_Donnees As String = "A" & L_Premiere_Valeur & ":Q65536"    ' La plage de données maximale possible
 Const CELL_plage_max_COL_vin As String = "A" & L_Premiere_Valeur & ":A65536"    ' La plage de données maximale possible
 Const CELL_plage_max_COL_id As String = "B" & L_Premiere_Valeur & ":B65536"    ' La plage de données maximale possible
-' La formule qui permet de calculer la consommation moyenne, qui doit être : =SI(L1=0;"Non dispo.";L1/(H2-G5)*100)
-'Const FORMULE_calcul_Conso_tot_moy As Variant = "=SI(" & CELL_conso_tot & "=0;""Non dispo."";" & CELL_conso_tot & "/(H8-G10)*100)"
 ' V1.5 : MultiVIN
-Const G_Nb_VIN_Max = 20                     ' Nb VIN max traité par cette macro
 Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par cette macro
-
 
 ' Constantes pour la feuille Accueil
 Const C_entete_ListeVIN        As Integer = 13     ' = 13 (M) Colonne d'entête des VIN dans la liste des vins récupérés, la colonne des descriptions des véhicules est celle d'à coté : 13+1 = N
 Const L_entete_ListeVIN        As Integer = 3      ' Ligne d'entête des VIN dans la liste des vins récupérés, elle correspond aussi à celles des descriptions des véhicules
-Const VERSION As String = "v1.9.1"    ' Version du fchier
+Const VERSION As String = "v1.9.3"    ' Version du fchier
 Const CELL_ver As String = "B3"     ' Cellule où afficher la version du fichier
+'
+' Variables générales
+Public Const C_pos_arr_lat     As Integer = 13     '         = 13 (M) -> Position d'arrivée - Latitude
+Public Const C_pos_arr_long    As Integer = 14     '         = 14 (N) -> Position d'arrivée - Longitude
+Public Const C_pos_arr_adr     As Integer = 15     '         = 15 (O) -> Position d'arrivée - Adresse
+Public Const CELL_lat  As String = "H9"
+Public Const CELL_long As String = "H8"
+Public Const CELL_adr As String = "E8"
+Public Const G_Nb_VIN_Max = 20                     ' Nb VIN max traité par cette macro
+Public Macro_en_cours As Boolean
 '
 ' Fin de déclaration des constantes
 '
@@ -79,8 +78,9 @@ Const CELL_ver As String = "B3"     ' Cellule où afficher la version du fichier
 Sub MYP_JSON_Decode()
     Dim jsonText As String
     Dim jsonObject As Object, item As Object, item_item As Object
+    Dim ws_Trajet As Worksheet, ws_Accueil As Worksheet
     Dim i, j, k As Long     ' Variables utilisées pour les compteurs de boucles For
-    Dim ws As Worksheet, ws_acc As Worksheet
+    Dim Trouve As Boolean
         
     Dim FSO As New FileSystemObject
     Dim JsonTS As TextStream
@@ -100,7 +100,7 @@ Sub MYP_JSON_Decode()
 ' V1.5 : pour MultiVIN
     Dim l_Tab_Vin As Integer                    ' pour boucle sur les vin
     Dim Nb_VIN As Integer                       ' Nb VIN trouvés dans le fichier .myp
-    Dim Liste_VIN(G_Nb_VIN_Max, 2) As String    ' Tableau interne des VIN trouvés (col 1 = vin, col 2 = retenu)
+    Dim Liste_VIN(G_Nb_VIN_Max, 2) As Variant   ' Tableau interne des VIN trouvés (col 1 = vin, col 2 = retenu)
     Dim VIN_Actuel As String                    ' VIN associé à la boucle des trajets
     Dim VIN_A_Traiter As Boolean                ' Pour définir le chemin par défaut où chercher le fichier de donnée
 ' V1.6 : pour ne pas effacer les données au début
@@ -112,22 +112,19 @@ Sub MYP_JSON_Decode()
     Dim Infos_VIN() As Variant
     Dim R As Range
     Dim Info_Voiture As String
-    Dim Nb_VIN_renseignes As Integer
-    Dim i_TCD
+    Dim Nb_VIN_renseignes, Nb_VIN_Selection, Nb_VIN_Filtre As Integer
+    Dim i_TCD, Derniere_Lat, Derniere_Long, Derniere_Adr, Critere(G_Nb_VIN_Max)
+        
+    Set ws_Trajet = Worksheets("Trajets")
+    Set ws_Accueil = Worksheets("Accueil")
     
-    Set ws = Worksheets("Trajets-MyPeugeot")
-    Set ws_acc = Worksheets("Accueil")
-    
-    'Sheets("Accueil").Activate
-    ws_acc.Activate
+    ws_Accueil.Activate
     
     EcrireValeurFormat cell:=Range(CELL_ver).Offset(-1, 0), val:="Version du fichier", f_size:=10, wrap:=True
     EcrireValeurFormat cell:=Range(CELL_ver), val:=VERSION, f_size:=16, wrap:=True
 ' V1.8 : activation de cette feuille pour être sûr d'être dedans
-    Sheets("Trajets-MyPeugeot").Activate
-    
+    ws_Trajet.Activate
     JsonConverter.JsonOptions.UseDoubleForLargeNumbers = True
-    
     CheminFichier = ActiveWorkbook.Path & "\"
     ' Il y a une erreur si on travail dans le dossier OneDrive, le CheminFicher est un lien du type https://d.docs.live.net/8f87e4...
     ' Il faut donc vérifier si le début chaine de caractère n'est pas https://
@@ -141,8 +138,8 @@ Sub MYP_JSON_Decode()
     FichierMYP = Application.GetOpenFilename("Fichiers trajets Peugeot App (*.myp),*.myp,Fichiers trajets Citroen App (*.myc),*.myc,Fichiers trajets DS App (*.myd),*.myd")  ' On demande la sélection du fichier
     If FichierMYP = False Then
         MsgBox "Aucun fichier n'a été selectionné !", vbCritical
-        ws_acc.Activate
-        ws_acc.Range(Cells(1, 1), Cells(1, 1)).Select  ' On sélection la cellule A1 ne pas avoir tout le tableau sélectionné
+        ws_Accueil.Activate
+        Cells(1, 1).Select ' On sélection la cellule A1 ne pas avoir tout le tableau sélectionné
         Exit Sub
     End If
     FormeEncours.Show
@@ -160,19 +157,12 @@ Sub MYP_JSON_Decode()
     ' Effacage_Donnees     retiré en 1.6
     
     nbTrip = 0    ' On réinitialise le nombre de trajets
-    EcrireValeurFormat cell:=ws.Range(CELL_fichierMYP), val:=FichierMYP, wrap:=False
+    EcrireValeurFormat cell:=Range(CELL_fichierMYP), val:=FichierMYP, wrap:=False
     Set jsonObject = JsonConverter.ParseJson(jsonText)
 
 ' V1.9.1 : Déport des VINS renseignés dans la feuille d'accueil
-' V1.9 : recherche des VIN renseignés dans la feuille cachée
-'    Nb_VIN_renseignes = 0
-'    Sheets("Données-VIN").Activate
-'    Set R = [A1].CurrentRegion
-'    Infos_VIN = R
-'    Nb_VIN_renseignes = UBound(Infos_VIN)
-
-' V1.9.1 : recherche des VIN renseignés dans la feuille Acceuil
-    Sheets("Accueil").Activate
+' V1.9.1 : recherche des VIN renseignés dans la feuille Accueil
+    ws_Accueil.Activate
     ' Il faut tester si la première ligne sous l'entête "VIN - Description véhicule" est vide ou pas
     ' S'il n'y a pas de valeur, alors il n'y a aucun VIN de renseignés,
     ' Sinon on chercher à prendre tous les VIN écrits.
@@ -196,9 +186,11 @@ Sub MYP_JSON_Decode()
 ' Si aucun VIN dans le fichier myp, on sort !
     If Nb_VIN = 0 Then
         MsgBox "Aucun VIN trouvé dans votre fichier .myp. Pb de structure ?", vbCritical
+        Application.ScreenUpdating = True
         Exit Sub
     ElseIf Nb_VIN >= G_Nb_VIN_Max Then      ' Par défaut, on gère 20 VINs différents
         MsgBox "Trop de VIN détectés. Pb de structure ?", vbCritical
+        Application.ScreenUpdating = True
         Exit Sub
     End If
 ' Affichage de la forme de choix des VIN à importer, seulement si plus de 1 VIN. Sinon, celui-ci devient défaut
@@ -218,12 +210,10 @@ Sub MYP_JSON_Decode()
             If Info_Voiture = "" Then    ' VIN n'existant pas, on demande les infos pour ajouter ses infos
                 Load FormeInfoVIN
                 FormeInfoVIN.NumVIN = "VIN : " & Liste_VIN(l_Tab_Vin, 1)
-                FormeInfoVIN.DescriptionVIN = "Ma voiture " & l_Tab_Vin
+                FormeInfoVIN.DescriptionVIN = "Ma voiture " & Nb_VIN_renseignes
                 FormeInfoVIN.Show
                 Info_Voiture = FormeInfoVIN.DescriptionVIN
                 FormeInfoVIN.Hide
-                Dim toto, tata
-                
                 ' Il faut tester si la première ligne sous l'entête "VIN - Description véhicule" est vide ou pas
                 ' S'il n'y a pas de valeur, alors il n'y a aucun VIN de renseignés,
                 ' Sinon on chercher à prendre tous les VIN écrits.
@@ -270,7 +260,7 @@ Sub MYP_JSON_Decode()
         If Info_Voiture = "" Then    ' VIN n'existant pas, on demande les infos pour ajouter ses infos
             Load FormeInfoVIN
             FormeInfoVIN.NumVIN = "VIN : " & Liste_VIN(1, 1)
-            FormeInfoVIN.DescriptionVIN = "Ma voiture"
+            FormeInfoVIN.DescriptionVIN = "Ma voiture " & Nb_VIN_renseignes
             FormeInfoVIN.Show
             Info_Voiture = FormeInfoVIN.DescriptionVIN
             
@@ -295,7 +285,7 @@ Sub MYP_JSON_Decode()
         End If
     End If
 
-    Sheets("Trajets-MyPeugeot").Activate
+    ws_Trajet.Activate
 ' V1.8
     FormeEncours.TexteEnCours = "Traitement des données en cours, patience..."
     FormeEncours.Repaint
@@ -306,11 +296,11 @@ Sub MYP_JSON_Decode()
     Next i
     ' Pour vraiment avoir la dernière ligne du tableau rempli sans risquer d'effacer une donnée, il faut réinitialiser les filtres
     ' Sinon la dernière ligne remplie ne sera que celle affichée, toutes celles masquées au-dessous ne compteront pas...
-    Worksheets("Trajets-MyPeugeot").Range("$A$3:$B$150000").AutoFilter Field:=1
-    Derniere_Ligne_remplie = ws.Cells(Columns(1).Cells.Count, 1).End(xlUp).Row
+    Range("$A$3:$B$150000").AutoFilter Field:=1
+    Derniere_Ligne_remplie = Cells(Columns(1).Cells.Count, 1).End(xlUp).Row
     Nb_Trajets = 0
     For i = L_Premiere_Valeur To Derniere_Ligne_remplie
-        T_Trajets_existants(i - L_Premiere_Valeur + 1) = ws.Cells(i, C_vin) & ";" & ws.Cells(i, C_id)
+        T_Trajets_existants(i - L_Premiere_Valeur + 1) = Cells(i, C_vin) & ";" & Cells(i, C_id)
         Nb_Trajets = Nb_Trajets + 1
     Next i
 
@@ -416,12 +406,12 @@ Sub MYP_JSON_Decode()
     FormeEncours.Repaint
     
 ' V1.6 : tri final sur colonnes A puis B
-    ws.Range(CELL_plage_1ereligne).Select
-    ws.Range(Selection, Selection.End(xlDown)).Select
-    ws.Sort.SortFields.Clear
-    ws.Sort.SortFields.Add Key:=Range(CELL_plage_max_COL_vin), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal     ' Range de base "A5:A65536"
-    ws.Sort.SortFields.Add Key:=Range(CELL_plage_max_COL_id), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal      ' Range de base "B5:B65536"
-    With ws.Sort
+    Range(CELL_plage_1ereligne).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    ws_Trajet.Sort.SortFields.Clear
+    ws_Trajet.Sort.SortFields.Add Key:=Range(CELL_plage_max_COL_vin), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal     ' Range de base "A5:A65536"
+    ws_Trajet.Sort.SortFields.Add Key:=Range(CELL_plage_max_COL_id), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal      ' Range de base "B5:B65536"
+    With ws_Trajet.Sort
         .SetRange Range(CELL_plage_max_Donnees)        ' range par défaut "A5:Q65536"
         .Header = xlGuess
         .MatchCase = False
@@ -429,108 +419,111 @@ Sub MYP_JSON_Decode()
         .SortMethod = xlPinYin
         .Apply
     End With
-    
-    ws.Cells(1, 4).Select   ' On sélection la cellule de version pour ne pas avoir tout le tableau sélectionné
-        
+    Cells(1, 4).Select   ' On sélection la cellule de version pour ne pas avoir tout le tableau sélectionné
 ' V1.7 : mise en place du formatage par colonne
 ' Colonne VIN
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_vin, f_size:=8
-    'ws.Range(ws.Cells(L_Premiere_Valeur, C_vin), ws.Cells(L_Premiere_Valeur, C_vin).End(xlDown)).Font.Size = 8
-     
-    'Formater_Cellules cell:=ws.Cells(L_Premiere_Valeur, C_vin)
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_vin, f_size:=8
 ' Colonne Date départ
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_date_dep, n_format:="date"
-    'Range(Cells(L_Premiere_Valeur, C_date_dep), Cells(L_Premiere_Valeur, C_date_dep)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormat = "dd/mm/yy - hh:mm"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_date_dep, n_format:="date"
 ' Colonne Date Arrivée
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_date_arr, n_format:="date"
-    'Range(Cells(L_Premiere_Valeur, C_date_arr), Cells(L_Premiere_Valeur, C_date_arr)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormat = "dd/mm/yy - hh:mm"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_date_arr, n_format:="date"
 ' Colonne Durée
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_duree, n_format:="duree"
-    'Range(Cells(L_Premiere_Valeur, C_duree), Cells(L_Premiere_Valeur, C_duree)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormat = "h:mm"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_duree, n_format:="duree"
 ' Colonne Distance
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist, n_format:="1"
-    'Range(Cells(L_Premiere_Valeur, C_dist), Cells(L_Premiere_Valeur, C_dist)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormatLocal = "0,0"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist, n_format:="1"
 ' Colonne Distance totale
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist_tot, n_format:="0"
-    'Range(Cells(L_Premiere_Valeur, C_dist_tot), Cells(L_Premiere_Valeur, C_dist_tot)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormatLocal = "0"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist_tot, n_format:="0"
 ' Colonne conso
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso, n_format:="2"
-    'Range(Cells(L_Premiere_Valeur, C_conso), Cells(L_Premiere_Valeur, C_conso)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormatLocal = "0,00"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso, n_format:="2"
 ' Colonne conso moyenne
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso_moy, n_format:="1"
-    'Range(Cells(L_Premiere_Valeur, C_conso_moy), Cells(L_Premiere_Valeur, C_conso_moy)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormatLocal = "0,0"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso_moy, n_format:="1"
 ' Colonne niveau carburant
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_niv_carb, n_format:="%"
-    'Range(Cells(L_Premiere_Valeur, C_niv_carb), Cells(L_Premiere_Valeur, C_niv_carb)).Select
-    'Range(Selection, Selection.End(xlDown)).Select
-    'Selection.NumberFormat = "0 %"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_niv_carb, n_format:="%"
 ' Colonne adresse Départ
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_pos_dep_adr, n_format:="add"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_pos_dep_adr, n_format:="add"
 ' Colonne adresse Arrivée
-    Formater_Cellules WS_tmp:=ws, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_pos_arr_adr, n_format:="add"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_pos_arr_adr, n_format:="add"
     
-   ' On recalcule le nombre de trajets présent dans le tableau : ce nombre tient compte de tous les trajets affichés, ceux initialement présent avant l'import + ceux importés.
-   ' On compte combien il y a d'ID de trajet
-' v1.8    nbTrip = ws.Range(ws.Cells(L_Premiere_Valeur, C_id), ws.Cells(L_Premiere_Valeur, C_id).End(xlDown)).Count
-' v1.8    EcrireValeurFormat cell:=ws.Range(CELL_nb_trips), val:=nbTrip, f_size:=12                   ' On écrit le nombre de trajet
-    
-' v1.8    derniere_val_tab = 4 + nbTrip      ' valeur qui délimite la dernière ligne contenant un trajet
-    
-    ' On récupère le kilométrage final du dernier trajer vu qu'il n'est plus forcément récupéré si on charge un fichier de donnée où il n'y a pas de nouveaux trajets
-' v1.8    kilometrage = ws.Cells(derniere_val_tab, C_dist_tot).Value
-' v1.8    EcrireValeurFormat cell:=ws.Range(CELL_km), val:=kilometrage, n_format:="0", f_size:=12     ' On écrit le kilométrage total de la voiture
-    
-    ' Calcul de la consommation totale du tableau
-' v1.8    conso_totale = ws.Application.WorksheetFunction.Sum(ws.Range(CELL_plage_conso_tot & derniere_val_tab))
-    ' On écrit la valeur calculée de la consommation totale de tous les trajets
-' v1.8    EcrireValeurFormat cell:=ws.Range(CELL_conso_tot), val:=conso_totale, n_format:="2", f_size:=12
-    
-' v1.8    ws.Range(CELL_conso_tot_moy).FormulaLocal = FORMULE_calcul_Conso_tot_moy        ' On réécrit la formule au cas-où... si jamais les cellules sont déplacées :)
-' v1.8    ws.Range(CELL_conso_tot_moy).NumberFormatLocal = "0,0"
-    
+' V1.9.3 : pour indiquer que la macro est en cours
+    Macro_en_cours = True
+
 ' V1.8 : rafraichissement du TCD. On positionne tous les VIN à "coché" sauf le VIN "vide" par défaut
-    Sheets("Accueil").PivotTables("TCD_VIN").PivotCache.Refresh
-    Sheets("Accueil").PivotTables("TCD_VIN").PivotFields("VIN(s)").CurrentPage = "(All)"
-' V1.9 : sélection du 1er vin importé dans le TCD
-    With Sheets("Accueil").PivotTables("TCD_VIN").PivotFields("VIN(s)")
-        .ClearAllFilters
-        For Each i_TCD In .PivotItems
-            If i_TCD = Liste_VIN(1, 1) Then
-                .CurrentPage = Liste_VIN(1, 1)
-                Exit For
-            Else
-                .CurrentPage = "(blank)"
-            End If
-        Next
-    End With
+    ws_Accueil.PivotTables("TCD_VIN").PivotCache.Refresh
+    ws_Accueil.PivotTables("TCD_VIN").PivotFields("VIN(s)").CurrentPage = "(All)"
+' V1.9 : sélection de tous les vin importés dans le TCD. On les déselectionne tous d'abord
+    For Each i_TCD In ws_Accueil.PivotTables("TCD_VIN").PivotFields("VIN(s)").PivotItems
+        If i_TCD.Name = "(blank)" Then
+            i_TCD.Visible = True
+        Else
+            i_TCD.Visible = False
+        End If
+    Next
+    ws_Accueil.PivotTables("TCD_VIN").PivotFields("VIN(s)").EnableMultiplePageItems = True
+    ' V1.9.2 : recherche si le VIN a été sélectionné, et on compte combien il y en a
+    Nb_VIN_Selection = 0
+    For i = 1 To UBound(Liste_VIN)
+        If Liste_VIN(i, 2) Then
+            On Error Resume Next
+            ws_Accueil.PivotTables("TCD_VIN").PivotFields("VIN(s)").PivotItems(CStr(Liste_VIN(i, 1))).Visible = True
+            On Error GoTo 0
+            Nb_VIN_Selection = Nb_VIN_Selection + 1
+        End If
+    Next i
+    ws_Accueil.PivotTables("TCD_VIN").PivotFields("VIN(s)").PivotItems("(blank)").Visible = False
 ' V1.8
     FormeEncours.Hide
-    Sheets("Trajets-MyPeugeot").Activate
+    ws_Trajet.Activate
 ' V1.9 : sélection du 1er vin importé dans le filtre
-    ActiveSheet.Range("$A$2:$B$655007").AutoFilter Field:=1, Criteria1:=Liste_VIN(1, 1)
+    Nb_VIN_Filtre = 0
+    For i = 1 To UBound(Liste_VIN)
+        If Liste_VIN(i, 2) Then
+            Nb_VIN_Filtre = Nb_VIN_Filtre + 1
+            Critere(Nb_VIN_Filtre) = Liste_VIN(i, 1)
+            Select Case i
+                Case 1
+                    ActiveSheet.Range("$A$2:$B$65000").AutoFilter Field:=1, Criteria1:=Critere(1)
+                Case 2
+                    ActiveSheet.Range("$A$2:$B$65000").AutoFilter Field:=1, Criteria1:=Critere(1), _
+                       Operator:=xlOr, Criteria2:=Critere(2)
+                Case Else
+                    ActiveSheet.Range("$A$2:$B$65000").AutoFilter Field:=1, Criteria1:=Critere, _
+                       Operator:=xlFilterValues
+            End Select
+        End If
+    Next
+    Cells(1, 1).Select ' On sélection la cellule A1 ne pas avoir tout le tableau sélectionné
+' V1.9.3 : Détermination de la dernière adresse atteinte
+    Derniere_Lat = ""
+    Derniere_Long = ""
+    Derniere_Adr = ""
+    If Nb_VIN_Selection = 1 Then
+      ' uniquement si un seul vin sélectionné
+        Range("A2").Select
+        Selection.End(xlDown).Select
+        Derniere_Lat = Cells(Selection.Row, C_pos_arr_lat).Value
+        Derniere_Long = Cells(Selection.Row, C_pos_arr_long).Value
+        Derniere_Adr = Cells(Selection.Row, C_pos_arr_adr).Value
+    End If
+    ws_Accueil.Activate
+    Range(CELL_lat) = Derniere_Lat
+    Range(CELL_long) = Derniere_Long
+    Range(CELL_adr) = Derniere_Adr
+' V1.9.3 : pour indiquer que la macro est terminée
+    Macro_en_cours = False
+' Ce qui suit ne fonctionne pas, j'ai une erreur sur le .AddItem...
+'    Sheets("Accueil").ComboBox1.Clear
+'    Sheets("Accueil").ComboBox1.Style = fmStyleDropDownList
+'    Sheets("Accueil").ComboBox1.AddItem = "TOTO3"
+'    Sheets("Accueil").ComboBox1.AddItem = "TOTO3"
+'    Sheets("Accueil").ComboBox1.Clear
+
+    ws_Accueil.Activate
+    Cells(1, 1).Select ' On sélection la cellule A1 ne pas avoir tout le tableau sélectionné
 ' V1.7 : optimisation : remise de la mise à jour de l'affichage
     Application.ScreenUpdating = True
-   
-    ws_acc.Activate
-    ws_acc.Range(Cells(1, 1), Cells(1, 1)).Select  ' On sélection la cellule A1 ne pas avoir tout le tableau sélectionné
-    
 End Sub
 
-Private Sub Formater_Cellules(WS_tmp As Worksheet, ligne_cell As Variant, colonne_cell As Variant, Optional n_format As String = "General", Optional f_size As Integer = 10, Optional wrap As Boolean = False)
+Private Sub Formater_Cellules(ws_tmp As Worksheet, ligne_cell As Variant, colonne_cell As Variant, Optional n_format As String = "General", Optional f_size As Integer = 10, Optional wrap As Boolean = False)
     ' Fonction pour écrire formater la valeur dans une cellule ou une plage de cellules
     ' Arguments obligatoires :  WS_tmp As Worksheet     <- La feuille de calcul où on travail
     '                           ligne_cell As Variant   <- La ligne de la cellule de départ
@@ -547,40 +540,40 @@ Private Sub Formater_Cellules(WS_tmp As Worksheet, ligne_cell As Variant, colonn
        
     Select Case n_format
         Case "date"
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "dd/mm/yy - hh:mm"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "dd/mm/yy - hh:mm"
         Case "duree"
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "h:mm"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "h:mm"
         Case "0"
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0"
         Case "1"
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0,0"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0,0"
         Case "2"
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0,00"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormatLocal = "0,00"
         Case "%"
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "0 %"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "0 %"
         Case Else
-            WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "General"
+            ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "General"
     End Select
     
     If n_format = "add" Then        ' Il faut vérifier si on est sur un champ adresse car pour l'adresse il faut aligner à gauche xlHAlignLeft
-        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignLeft
+        ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignLeft
     Else
-        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignCenter
+        ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignCenter
     End If
     ' Dans tous les cas, le VerticalAlignment est à xlVAlignCenter
-    WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).VerticalAlignment = xlVAlignCenter
+    ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).VerticalAlignment = xlVAlignCenter
     
 '    If (f_size <> 10) Then
 '        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = f_size
 '    Else
 '        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = 10
 '    End If
-    WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = f_size
+    ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).Font.Size = f_size
     
     If (wrap = True) Then
-        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).WrapText = True
+        ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).WrapText = True
     Else
-        WS_tmp.Range(WS_tmp.Cells(ligne_cell, colonne_cell), WS_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).WrapText = False
+        ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).WrapText = False
     End If
     
 End Sub
@@ -637,8 +630,8 @@ End Sub
 Sub Effacage_Donnees()
     ' Fonction pour effacer les données avant d'utiliser celles du fichier ouvert
 ' 1.9 : il faut d'abord retirer le filtre sur le VIN pour TOUT effacer
-    Worksheets("Trajets-MyPeugeot").Range("$A$3:$B$150000").AutoFilter Field:=1
-    With Worksheets("Trajets-MyPeugeot")
+    Worksheets("Trajets").Range("$A$3:$B$150000").AutoFilter Field:=1
+    With Worksheets("Trajets")
 ' 1.8        .Range(CELL_vin_entete) = ""           ' Le VIN
         .Range(CELL_fichierMYP) = ""           ' Le nom du fichier
 ' 1.8       .Range(CELL_nb_trips) = ""  ' Le nombre de trajet et le kilométrage total
@@ -646,19 +639,17 @@ Sub Effacage_Donnees()
         .Range(CELL_plage_donnees) = ""    ' Le grand tableau de valeurs de tous les trajets effectués
 ' 1.8       .Range(CELL_conso_tot) = ""           ' La consommation totale sur tous les trajets
     End With
+    Macro_en_cours = True
     With Worksheets("Accueil")
         .PivotTables("TCD_VIN").PivotCache.Refresh
         .Range("M4:N65000") = ""
     End With
- 
-    
-    
+    Macro_en_cours = False
     With Worksheets("Donnees-Recap")
         .Range("A2:D10000") = ""  ' Un tableau récapitulatif mensuel
         .Range("F4:F53") = 0      ' Le nombre de trajets regroupé en plage de distance
         .Range("H4:H53") = 0      ' La distance des regroupements de trajets
     End With
-
 End Sub
 Private Function Date_UNIX_To_Date_GMT(date_unix_GMT As Long) As Date
     ' Fonction qui converti un temps UNIX en date GMT
@@ -827,6 +818,6 @@ Sub Bouton11_Cliquer()
 End Sub
 
 Sub Bouton3_Cliquer()
-    Sheets("Trajets-MyPeugeot").Activate
+    Sheets("Trajets").Activate
 End Sub
 
