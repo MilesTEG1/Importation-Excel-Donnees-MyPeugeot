@@ -18,9 +18,10 @@ Attribute VB_Name = "Module1"
 '       - V 1.9.1 : Correction de quelques bugs, et amélioration de la feuille Accueil
 '       - V 1.9.2 : Correction de quelques bugs
 '       - V 1.9.3 : Correction de quelques bugs + Ajout de la dernière adresse d'arrivée connue pour le VIN sélectionné
+'       - V 1.9.4 : Ajout d'une feuille Tutoriel expliquant les différentes fonctions du fichier XLSM.
 '
 ' Couples de versions d'Excel & OS testées :
-'       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (build 12624.20382)
+'       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (build 12624.20382 & 12624.20442)
 '       - Windows 10 v1809 & Excel 2016
 '       - Windows 10 v1909 & Excel 2019
 '
@@ -56,7 +57,7 @@ Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par
 ' Constantes pour la feuille Accueil
 Const C_entete_ListeVIN        As Integer = 13     ' = 13 (M) Colonne d'entête des VIN dans la liste des vins récupérés, la colonne des descriptions des véhicules est celle d'à coté : 13+1 = N
 Const L_entete_ListeVIN        As Integer = 3      ' Ligne d'entête des VIN dans la liste des vins récupérés, elle correspond aussi à celles des descriptions des véhicules
-Const VERSION As String = "v1.9.3"    ' Version du fchier
+Const VERSION As String = "v1.9.4"    ' Version du fchier
 Const CELL_ver As String = "B3"     ' Cellule où afficher la version du fichier
 '
 ' Variables générales
@@ -821,3 +822,6 @@ Sub Bouton3_Cliquer()
     Sheets("Trajets").Activate
 End Sub
 
+Sub Bouton_Tuto_Cliquer()
+    Sheets("Tutoriel").Activate
+End Sub
