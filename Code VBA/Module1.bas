@@ -19,6 +19,7 @@ Attribute VB_Name = "Module1"
 '       - V 1.9.2 : Correction de quelques bugs
 '       - V 1.9.3 : Correction de quelques bugs + Ajout de la dernière adresse d'arrivée connue pour le VIN sélectionné
 '       - V 1.9.4 : Ajout d'une feuille Tutoriel expliquant les différentes fonctions du fichier XLSM.
+'       - V 1.9.5 : Ajout d'une décimale dans l'affichage des kilométrages
 '
 ' Couples de versions d'Excel & OS testées :
 '       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (build 12624.20382 & 12624.20442)
@@ -57,7 +58,7 @@ Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par
 ' Constantes pour la feuille Accueil
 Const C_entete_ListeVIN        As Integer = 13     ' = 13 (M) Colonne d'entête des VIN dans la liste des vins récupérés, la colonne des descriptions des véhicules est celle d'à coté : 13+1 = N
 Const L_entete_ListeVIN        As Integer = 3      ' Ligne d'entête des VIN dans la liste des vins récupérés, elle correspond aussi à celles des descriptions des véhicules
-Const VERSION As String = "v1.9.4"    ' Version du fchier
+Const VERSION As String = "v1.9.5"    ' Version du fchier
 Const CELL_ver As String = "B3"     ' Cellule où afficher la version du fichier
 '
 ' Variables générales
@@ -433,7 +434,7 @@ Sub MYP_JSON_Decode()
 ' Colonne Distance
     Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist, n_format:="1"
 ' Colonne Distance totale
-    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist_tot, n_format:="0"
+    Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_dist_tot, n_format:="1"
 ' Colonne conso
     Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=C_conso, n_format:="2"
 ' Colonne conso moyenne
@@ -823,5 +824,6 @@ Sub Bouton3_Cliquer()
 End Sub
 
 Sub Bouton_Tuto_Cliquer()
+' Activer la feuille Tutoriel
     Sheets("Tutoriel").Activate
 End Sub
