@@ -6,6 +6,8 @@
 - [X] Ajouter l'adresse du dernier lieu connu correspondant au dernier trajet fait pour le VIN sélectionné
 - [ ] Recruter des testeurs de l'app MyCytroen et MyDS
 - [ ] Augmenter la taille du nombre de VIN possible (tableau [M;N])
+- [ ] Détermination de la marque de la voiture
+- [ ] Importer tous les champs non-importés
 
 ## Next (ensuite)
 
@@ -16,7 +18,6 @@
   - [ ] Kilométrage de départ du tajet i = Kilométrage d'arrivée du trajet i-1
   - [ ] Kilométrage d'arrivée du tajet i = Kilométrage de départ du trajet i+1
   - [ ] idem pour le volume de carburant
-- [ ] Importer tous les champs non-importés ?
 - [ ] Faire une version qui exporte les données dans un fichier JSON pour MyPeugeot, MyCytroen, MyDS
 - [ ] Nettoyer le code de tous les commentaires inutiles de code inutilisé quand le code sera stabilisé
 
@@ -29,3 +30,5 @@
 - [X] Utilisation d'une page d'accueil listant les VINs importés avec une correspondance d'un véhicule
 - [X] La page d'accueil contient le TCD et les boutons pour lancer les macros
 - [X] Affichage de la dernière position connue pour le VIN sélectionné (uniquement un VIN sélectionné)
+- [X] Affichage avec une décimale des kilométrages
+
