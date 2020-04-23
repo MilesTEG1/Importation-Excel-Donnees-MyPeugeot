@@ -18,7 +18,7 @@ Attribute VB_Name = "Module1"
 '       - V 1.9.1 : Correction de quelques bugs, et amélioration de la feuille Accueil
 '       - V 1.9.2 : Correction de quelques bugs
 '       - V 1.9.3 : Correction de quelques bugs + Ajout de la dernière adresse d'arrivée connue pour le VIN sélectionné
-'       - V 1.9.4 : Ajout d'une feuille Tutoriel expliquant les différentes fonctions du fichier XLSM.
+'       - V 1.9.4 : Ajout d'une feuille Tutoriel expliquant les différentes fonctions d'importation du fichier XLSM.
 '       - V 1.9.5 : Ajout d'une décimale sur les kilomètres totaux affichés (colonne G)
 '       - V 2.0 :   Ajout des valeurs non utilisée dans des colonnes masquées en vue de l'exportation des données en format fichier JSON
 '                   Mise en place d'une structure de type Dictionnaire pour stocker les colonnes utilisées pour les données
@@ -31,6 +31,7 @@ Attribute VB_Name = "Module1"
 '                       car les nombres ne peuvent avoir plus de 15 chiffres, donc ceux qui en ont plus sont arrondis à 15 chiffres en tout.
 '                       C'est la concession à faire pour avoir les coordonnées GPS sans arrondi, donc les plus précises.
 '                       Cela concerne les données suivantes : "consumption" et "distance"
+'                   Ajout d'une feuille Tutoriel pour l'exportation
 '
 ' Couples de versions d'Excel & OS testées :
 '       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (16.0 build 12624.20382 & 16.0 build 12624.20442)
@@ -43,26 +44,25 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-'
-Const VERSION As String = "v2.0 Bêta 18"     ' Version du fchier
+Const VERSION As String = "v2.0 Bêta 19"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
 'Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
 Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
 ' Constantes pour la feuille "Trajets"
 Const L_Premiere_Valeur As Integer = 3      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
 Const C_vin             As Integer = 1      ' COLONNE = 1 (A) -> VIN pour le trajet (il est possible d'avoir plusieurs VIN dans le fichier de donnée).
-Const C_startDate       As Integer = 3     ' Date DST calculée à partir du temps UNIX UTC fourni par le fichier de donnée
-Const C_endDate         As Integer = 4       ' Date DST calculée à partir du temps UNIX UTC fourni par le fichier de donnée
+Const C_startDate       As Integer = 3      ' Date DST calculée à partir du temps UNIX UTC fourni par le fichier de donnée
+Const C_endDate         As Integer = 4      ' Date DST calculée à partir du temps UNIX UTC fourni par le fichier de donnée
 Const C_duree           As Integer = 5      '         = 5 (E) -> Durée du trajet  (à calculer)
 Const C_dist            As Integer = 6      '         = 6 (F) -> Distance du trajet en km
 Const C_conso_moy       As Integer = 9      '         = 9 (I) -> Consommation moyenne en L/100km
 Const C_marque          As Integer = 33     '         = 33 (AG) -> Marque de la voiture
 Const CELL_fichierMYP   As String = "G" & (L_Premiere_Valeur - 2)  ' Cellule qui contiendra le nom du fichier importé
-Const CELL_plage_donnees    As String = "A" & L_Premiere_Valeur & ":AJ65536" ' Plage de cellules contenant les données
+Const CELL_plage_donnees    As String = "A" & L_Premiere_Valeur & ":AJ65536"    ' Plage de cellules contenant les données
 Const CELL_plage_1ereligne  As String = "A" & L_Premiere_Valeur & ":AJ" & L_Premiere_Valeur  ' Toute la 1ere ligne de donnée pour en faire le tri
-Const CELL_plage_max_Donnees As String = "A" & L_Premiere_Valeur & ":AJ65536"    ' La plage de données maximale possible
+Const CELL_plage_max_Donnees As String = "A" & L_Premiere_Valeur & ":AJ65536"   ' La plage de données maximale possible
 Const CELL_plage_max_COL_vin As String = "A" & L_Premiere_Valeur & ":A65536"    ' La plage de données maximale possible
-Const CELL_plage_max_COL_id As String = "B" & L_Premiere_Valeur & ":B65536"    ' La plage de données maximale possible
+Const CELL_plage_max_COL_id As String = "B" & L_Premiere_Valeur & ":B65536"     ' La plage de données maximale possible
 'V2.B18 : Constante définissant les colonnes masquées
 Const COLs_Masquees     As String = "R:AI"  ' Colonne R = 18 -/- Colonne AI = 35
 ' V1.5 : MultiVIN
@@ -72,7 +72,7 @@ Const G_Nb_Trajets_Max = 20000              ' Nb trajets max par VIN traités par
 Const C_entete_ListeVIN        As Integer = 13      ' = 13 (M) Colonne d'entête des VIN dans la liste des vins récupérés
                                                     ' la colonne des descriptions des véhicules est celle d'à coté : 13+1 = N
                                                     ' le colonne de la marque des véhicule est celle d'à coté encore : 13+2 = O
-Const L_entete_ListeVIN        As Integer = 3      ' Ligne d'entête des VIN dans la liste des vins récupérés, elle correspond aussi à celles des descriptions des véhicules
+Const L_entete_ListeVIN        As Integer = 3       ' Ligne d'entête des VIN dans la liste des vins récupérés, elle correspond aussi à celles des descriptions des véhicules
 
 Const Nb_marques As Integer = 3
 '
@@ -135,9 +135,9 @@ Sub MYP_JSON_Decode()
     Dim Nb_VIN_renseignes, Nb_VIN_Selection, Nb_VIN_Filtre As Integer
     Dim i_TCD, Derniere_Lat, Derniere_Long, Derniere_Adr, Critere(G_Nb_VIN_Max)
     ' Variable pour la marque de la voiture
-    Dim Marque_Voiture, Marque_Voiture_Apriori As String   ' 3 valeurs possibles : Peugeot si extension de fichier = .myp
-                                    '                       Citroën si extension de fichier = .myc
-                                    '                       DS      si extension de fichier = .myd
+    Dim Marque_Voiture, Marque_Voiture_Apriori As String    ' 3 valeurs possibles : Peugeot si extension de fichier = .myp
+                                                            '                       Citroën si extension de fichier = .myc
+                                                            '                       DS      si extension de fichier = .myd
 ' V2.0 : Export JSON => passage des colonnes en dictionaire
     ' Variables pour récupérer les tableaux de code d'erreur pour chaque trajet
     Dim chaine_tmp As String
@@ -1176,9 +1176,13 @@ Sub Bouton_Trajets_Cliquer()
 ' Activer feuille Trajets
     Sheets("Trajets").Activate
 End Sub
-Sub Bouton_Tuto_Cliquer()
-' Activer la feuille Tutoriel
-    Sheets("Tutoriel").Activate
+Sub Bouton_Tuto_Import_Cliquer()
+' Activer la feuille Tutoriel d'Importation
+    Sheets("Tuto-Import").Activate
+End Sub
+Sub Bouton_Tuto_Export_Cliquer()
+' Activer la feuille Tutoriel d'Exportation
+    Sheets("Tuto-Export").Activate
 End Sub
 Sub RemplisDicoJSON()
     DicoJSON.Add "id", 2                    ' Identificateur trajet
@@ -1537,7 +1541,7 @@ Sub MYP_JSON_Encode()
                             If Tableau_Trajets(j, DicoJSON(InfoJSON)) <> "" Then
                                 Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": " & Replace(Tableau_Trajets(j, DicoJSON(InfoJSON)), ",", ".") & virgule_O_N
                             End If
-                        Case "destQuality", "startPosQuality", "endPosQuality"  ' champs potentiellement vides
+                        Case "destQuality", "startPosQuality", "endPosQuality", "maintenanceDays"  ' champs potentiellement vides
                             ' Il faut tester si les champs sont vides ou pas. S'ils sont vides, on écrit rien, s'il y a quelque chose on l'écrit.
                             If (Tableau_Trajets(j, DicoJSON(InfoJSON)) <> "") Then
                                 Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": " & Tableau_Trajets(j, DicoJSON(InfoJSON)) & virgule_O_N
