@@ -44,10 +44,10 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-Const VERSION As String = "v2.0 Bêta 19"     ' Version du fchier
+Const VERSION As String = "v2.0 Bêta 20"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
-'Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
-Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
+Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
+'Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
 ' Constantes pour la feuille "Trajets"
 Const L_Premiere_Valeur As Integer = 3      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
 Const C_vin             As Integer = 1      ' COLONNE = 1 (A) -> VIN pour le trajet (il est possible d'avoir plusieurs VIN dans le fichier de donnée).
@@ -1185,40 +1185,52 @@ Sub Bouton_Tuto_Export_Cliquer()
     Sheets("Tuto-Export").Activate
 End Sub
 Sub RemplisDicoJSON()
-    DicoJSON.Add "id", 2                    ' Identificateur trajet
-    DicoJSON.Add "endMileage", 7
+    ' Fonction pour remplir le DicoJSON avec les noms des données et leur emplacement dans le tableau excel
+    ' On ne met pas par ordre des colonnes, mais par ordre de remplissage du fichier JSON, afin que l'ordre des données soit alphabétique.
+    ' Il est alors plus facile de comparer si il n'y a pas de problème avec NotePad++ et son plugins JSTool qui permet de trier les données
+    ' par ordre alphabétique, en plus de formater le fichier JSON.
+    
+    ' Attention la colonne 33 est réservée pour la marque.
+    
+    DicoJSON.Add "alertsActive", 29
+    DicoJSON.Add "alertsResolved", 30
     DicoJSON.Add "consumption", 8
-    DicoJSON.Add "startPosLatitude", 10
-    DicoJSON.Add "startPosLongitude", 11
-    DicoJSON.Add "startPosAddress", 12
-    DicoJSON.Add "endPosLatitude", 13
-    DicoJSON.Add "endPosLongitude", 14
-    DicoJSON.Add "endPosAddress", 15
-    DicoJSON.Add "fuelLevel", 16
-    DicoJSON.Add "fuelAutonomy", 17
-' Données non utilisées du fichier de données chargé
-    DicoJSON.Add "startMileage", 18         ' Donnée supplémentaire à ajouter dans la partie masquée du tableau
-    DicoJSON.Add "distance", 19
-    DicoJSON.Add "destLatitude", 20
-    DicoJSON.Add "destLongitude", 21
     DicoJSON.Add "destAddress", 22
     DicoJSON.Add "destQuality", 23
+    DicoJSON.Add "destLatitude", 20
+    DicoJSON.Add "destLongitude", 21
+    DicoJSON.Add "distance", 19
+    DicoJSON.Add "endMileage", 7
+    DicoJSON.Add "endPosAddress", 15
+    DicoJSON.Add "endPosAltitude", 35   ' Valeur présente dans certains fichier de données
+    DicoJSON.Add "endPosLatitude", 13
+    DicoJSON.Add "endPosLongitude", 14
+    DicoJSON.Add "endPosQuality", 28
+    DicoJSON.Add "fuelAutonomy", 17
+    DicoJSON.Add "fuelLevel", 16
+    DicoJSON.Add "id", 2                    ' Identificateur trajet
     DicoJSON.Add "maintenanceDays", 24
     DicoJSON.Add "maintenanceDistance", 25
     DicoJSON.Add "maintenancePassed", 26
+    DicoJSON.Add "startMileage", 18         ' Donnée supplémentaire à ajouter dans la partie masquée du tableau
+    DicoJSON.Add "startPosAddress", 12
+    DicoJSON.Add "startPosAltitude", 34     ' Valeur présente dans certains fichier de données
+    DicoJSON.Add "startPosLatitude", 10
+    DicoJSON.Add "startPosLongitude", 11
     DicoJSON.Add "startPosQuality", 27
-    DicoJSON.Add "endPosQuality", 28
-    DicoJSON.Add "alertsActive", 29
-    DicoJSON.Add "alertsResolved", 30
+
+    
+    ' Comme il se peut que certaines données soient absentes (valeur vide dans le tableau), il faut être sûr que la dernière valeur écrite
+    ' dans le fichier ne soit pas une de ces valeurs vides.
+    ' On place donc volontairement les deux valeurs "startDateTime" et endDateTime" en dernier dans le DicoJSON parce qu'elles ne seront jamais vide !
+    ' Mais on ne change pas leurs colones dans le tableau.
     DicoJSON.Add "startDateTime", 31    ' Je place ici ces valeurs car ce sont celles fournies par le fichier de données
     DicoJSON.Add "endDateTime", 32      ' Je place ici ces valeurs car ce sont celles fournies par le fichier de données
-    ' Attention la colonne 33 est réservée pour la marque.
-    DicoJSON.Add "startPosAltitude", 34 ' Valeur présente dans certains fichier de données
-    DicoJSON.Add "endPosAltitude", 35   ' Valeur présente dans certains fichier de données
+    
     DicoRempli = True
 End Sub
 
-Sub TEST_PROC()
+Sub TEST_PROCEDURE()
     Dim ws_Trajet As Worksheet, ws_Accueil As Worksheet
     Set ws_Trajet = Worksheets("Trajets")
     Set ws_Accueil = Worksheets("Accueil")
@@ -1226,7 +1238,7 @@ Sub TEST_PROC()
     Dim i As Integer
     
     tmp = Split(ws_Trajet.Range(CELL_fichierMYP).Value, "\")
-    Left(tmp(UBound(tmp)), Len(tmp(UBound(tmp))) - 4)
+    'Left(tmp(UBound(tmp)), Len(tmp(UBound(tmp))) - 4)
     
     i = Len(tmp(UBound(tmp)))
     
