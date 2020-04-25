@@ -44,7 +44,7 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-Const VERSION As String = "v2.0 Bêta 20"     ' Version du fchier
+Const VERSION As String = "v2.0"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
 Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
 'Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
@@ -1192,6 +1192,7 @@ Sub RemplisDicoJSON()
     
     ' Attention la colonne 33 est réservée pour la marque.
     
+    DicoJSON.Add "id", 2                    ' Identificateur trajet
     DicoJSON.Add "alertsActive", 29
     DicoJSON.Add "alertsResolved", 30
     DicoJSON.Add "consumption", 8
@@ -1208,7 +1209,6 @@ Sub RemplisDicoJSON()
     DicoJSON.Add "endPosQuality", 28
     DicoJSON.Add "fuelAutonomy", 17
     DicoJSON.Add "fuelLevel", 16
-    DicoJSON.Add "id", 2                    ' Identificateur trajet
     DicoJSON.Add "maintenanceDays", 24
     DicoJSON.Add "maintenanceDistance", 25
     DicoJSON.Add "maintenancePassed", 26
@@ -1218,7 +1218,6 @@ Sub RemplisDicoJSON()
     DicoJSON.Add "startPosLatitude", 10
     DicoJSON.Add "startPosLongitude", 11
     DicoJSON.Add "startPosQuality", 27
-
     
     ' Comme il se peut que certaines données soient absentes (valeur vide dans le tableau), il faut être sûr que la dernière valeur écrite
     ' dans le fichier ne soit pas une de ces valeurs vides.
@@ -1245,9 +1244,6 @@ Sub TEST_PROCEDURE()
     MsgBox "Nom du fichier ouvert : " & Left(tmp(UBound(tmp)), Len(tmp(UBound(tmp))) - 4), vbOKOnly + vbInformation
     
 End Sub
-
-
-
 '
 ' Fonction pour écrire les données trajets dans un fichier JSON : V 2.0
 '
@@ -1386,6 +1382,7 @@ Sub MYP_JSON_Encode()
             For j = 1 To UBound(Infos_VIN)
                 If Infos_VIN(j, 1) = Tableau_Trajets(i, C_vin) Then
                     Info_Voiture = Infos_VIN(j, 2)
+                    VIN_Actuel = Infos_VIN(j, 1)
                 End If
             Next j
             FormeVINExport.ListeVIN.AddItem Tableau_Trajets(i, C_vin) & " - " & Info_Voiture
@@ -1414,7 +1411,7 @@ Sub MYP_JSON_Encode()
     Else
         ReDim Liste_VIN(1)
         Nb_VIN_Selection = 1
-        Liste_VIN(1) = Tableau_Trajets(L_Premiere_Valeur, C_vin)
+        Liste_VIN(1) = VIN_Actuel
     End If
     Unload FormeVINExport
     Set Dico_VIN = Nothing
