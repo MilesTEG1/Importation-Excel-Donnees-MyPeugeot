@@ -32,6 +32,8 @@ Attribute VB_Name = "Module1"
 '                       C'est la concession à faire pour avoir les coordonnées GPS sans arrondi, donc les plus précises.
 '                       Cela concerne les données suivantes : "consumption" et "distance"
 '                   Ajout d'une feuille Tutoriel pour l'exportation
+'       - V 2.0.1 : Ajout de conversions en Double et Remplacement de . par v : CDbl(Replace( _donnée_ ), ".", ",")
+'                   pour certaines valeurs (latitudes, longitudes, distances, startMileage, endMileage...)
 '
 ' Couples de versions d'Excel & OS testées :
 '       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (16.0 build 12624.20382 & 16.0 build 12624.20442)
@@ -46,8 +48,10 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 Const VERSION As String = "v2.0.1"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
+
 'Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
 Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
+
 ' Constantes pour la feuille "Trajets"
 Const L_Premiere_Valeur As Integer = 3      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
 Const C_vin             As Integer = 1      ' COLONNE = 1 (A) -> VIN pour le trajet (il est possible d'avoir plusieurs VIN dans le fichier de donnée).
