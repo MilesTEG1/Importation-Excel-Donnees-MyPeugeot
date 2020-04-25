@@ -44,10 +44,10 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-Const VERSION As String = "v2.0"     ' Version du fchier
+Const VERSION As String = "v2.0.1"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
-Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
-'Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
+'Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
+Const var_DEBUG As Boolean = False      ' False =   On désactive un mode DEBUG où on affiche certaines choses
 ' Constantes pour la feuille "Trajets"
 Const L_Premiere_Valeur As Integer = 3      ' Première ligne à contenir des données (avant ce sont les lignes d'en-tête
 Const C_vin             As Integer = 1      ' COLONNE = 1 (A) -> VIN pour le trajet (il est possible d'avoir plusieurs VIN dans le fichier de donnée).
@@ -467,12 +467,17 @@ Sub MYP_JSON_Decode()
 ' V2.0 : on prend la donnée de distance si elle existe, sinon on la calcule
                     distance_trajet = item_item("distance")
                     If distance_trajet = 0 Then
-                        distance_trajet = item_item("endMileage") - item_item("startMileage")
+        ' V2.0.1 :  ajout d'une fonction de remplacement du . par une virgule pour les calculs dans le cas d'un nombre avec trop de chiffre
+        '           qui est sous forme de string, et conversion de cette string en Double avec CDbl()
+                        distance_trajet = CDbl(Replace(item_item("endMileage"), ".", ",")) - CDbl(Replace(item_item("startMileage"), ".", ","))
                     Else ' on a une valeur
                         distance_trajet = CDbl(Replace(item_item("distance"), ".", ","))
                     End If
+        
+        ' V2.0.1 :  là aussi, conversion en Double et Remplacement de . par v : CDbl(Replace( _donnée_ ), ".", ",")
                     Cells(i, C_dist).Value = distance_trajet
-                    Cells(i, DicoJSON("endMileage")).Value = item_item("endMileage")
+        
+                    Cells(i, DicoJSON("endMileage")).Value = CDbl(Replace(item_item("endMileage"), ".", ","))
                     
                     Cells(i, DicoJSON("consumption")).Value = CDbl(Replace(item_item("consumption"), ".", ","))
                     conso_trajet = Cells(i, DicoJSON("consumption")).Value
@@ -483,13 +488,14 @@ Sub MYP_JSON_Decode()
                     Else
                         Cells(i, C_conso_moy).Value = "//"
                     End If
-
-                    Cells(i, DicoJSON("startPosLatitude")).Value = item_item("startPosLatitude")
-                    Cells(i, DicoJSON("startPosLongitude")).Value = item_item("startPosLongitude")
+        
+        ' V2.0.1 : et on utilise la méthode de conversion en Dbl et de remplacement sur les latitudes et les longitude
+                    Cells(i, DicoJSON("startPosLatitude")).Value = Replace(item_item("startPosLatitude"), ".", ",")
+                    Cells(i, DicoJSON("startPosLongitude")).Value = Replace(item_item("startPosLongitude"), ".", ",")
                     adresse_dep = item_item("startPosAddress")
                     Cells(i, DicoJSON("startPosAddress")).Value = Correction_Adresse(adresse_dep)
-                    Cells(i, DicoJSON("endPosLatitude")).Value = item_item("endPosLatitude")
-                    Cells(i, DicoJSON("endPosLongitude")).Value = item_item("endPosLongitude")
+                    Cells(i, DicoJSON("endPosLatitude")).Value = Replace(item_item("endPosLatitude"), ".", ",")
+                    Cells(i, DicoJSON("endPosLongitude")).Value = Replace(item_item("endPosLongitude"), ".", ",")
                     
                     adresse_arr = item_item("endPosAddress")
                     Cells(i, DicoJSON("endPosAddress")).Value = Correction_Adresse(adresse_arr)
@@ -499,14 +505,19 @@ Sub MYP_JSON_Decode()
                     
 ' V2.0 : On ajoute les données inutilisées dans les colonnes masquées
                     ' On écrit les données non utilisées pour la future reconstruction du fichier de données
-                    Cells(i, DicoJSON("startMileage")).Value = item_item("startMileage")
-                    Cells(i, DicoJSON("distance")).Value = item_item("distance")
+        ' V2.0.1 :  là aussi, conversion en Double et Remplacement de . par v : CDbl(Replace( _donnée_ ), ".", ",")
+                    Cells(i, DicoJSON("startMileage")).Value = CDbl(Replace(item_item("startMileage"), ".", ","))
+                    
 ' V2.0 : on met une distance calculée si nécessaire
+        ' V2.0.1 : et on utilise la méthode de conversion en Dbl et de remplacement que si la chaine n'est pas vide...
                     If item_item("distance") = 0 Then
                         Cells(i, DicoJSON("distance")).Value = distance_trajet
+                    Else
+                        Cells(i, DicoJSON("distance")).Value = CDbl(Replace(item_item("distance"), ".", ","))
                     End If
-                    Cells(i, DicoJSON("destLatitude")).Value = item_item("destLatitude")
-                    Cells(i, DicoJSON("destLongitude")).Value = item_item("destLongitude")
+        ' V2.0.1 : et on utilise la méthode de conversion en Dbl et de remplacement sur les latitudes et les longitude
+                    Cells(i, DicoJSON("destLatitude")).Value = Replace(item_item("destLatitude"), ".", ",")
+                    Cells(i, DicoJSON("destLongitude")).Value = Replace(item_item("destLongitude"), ".", ",")
                     adresse_tmp = item_item("destAddress")
                     Cells(i, DicoJSON("destAddress")).Value = Correction_Adresse(adresse_tmp)
                     Cells(i, DicoJSON("destQuality")).Value = item_item("destQuality")
