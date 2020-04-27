@@ -34,6 +34,9 @@ Attribute VB_Name = "Module1"
 '                   Ajout d'une feuille Tutoriel pour l'exportation
 '       - V 2.0.1 : Ajout de conversions en Double et Remplacement de . par v : CDbl(Replace( _donnée_ ), ".", ",")
 '                   pour certaines valeurs (latitudes, longitudes, distances, startMileage, endMileage...)
+'       - V 2.0.2 : Modifications de l'export JSON pour avoir les tableaux d'alertes vide écrit sur une seule ligne.
+'                   Ajout de procédures pour neutraliser les erreurs de nombre écrit dans un format texte mais pas dans tous les classeurs,
+'                       seulement lorsque celui là s'ouvre (Voir dans ThisWorkbook)
 '
 ' Couples de versions d'Excel & OS testées :
 '       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (16.0 build 12624.20382 & 16.0 build 12624.20442)
@@ -46,7 +49,7 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-Const VERSION As String = "v2.0.1"     ' Version du fchier
+Const VERSION As String = "v2.0.2"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
 
 'Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses
@@ -415,7 +418,7 @@ Sub MYP_JSON_Decode()
     Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=DicoJSON("startPosAddress"), n_format:="add"
 ' Colonne adresse Arrivée
     Formater_Cellules ws_tmp:=ws_Trajet, ligne_cell:=L_Premiere_Valeur, colonne_cell:=DicoJSON("endPosAddress"), n_format:="add"
-    
+
     i = L_Premiere_Valeur + Nb_Trajets   ' On défini un compteur qui sert à se positionner sur la ligne où les données doivent être écrites.
     For Each item In jsonObject
 ' V1.5 : 1ère vérif à faire : que le VIN du trajet soit dans les VIN à importer
@@ -738,7 +741,7 @@ Private Sub Formater_Cellules(ws_tmp As Worksheet, ligne_cell As Variant, colonn
         Case Else
             ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).NumberFormat = "General"
     End Select
-    If n_format = "add" Then        ' Il faut vérifier si on est sur un champ adresse car pour l'adresse il faut aligner à gauche xlHAlignLeft
+    If (n_format = "add" Or n_format = "txt") Then       ' Il faut vérifier si on est sur un champ adresse car pour l'adresse il faut aligner à gauche xlHAlignLeft
         ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignLeft
     Else
         ws_tmp.Range(ws_tmp.Cells(ligne_cell, colonne_cell), ws_tmp.Cells(ligne_cell, colonne_cell).End(xlDown)).HorizontalAlignment = xlHAlignCenter
@@ -800,6 +803,7 @@ Sub Effacage_Donnees()
     Worksheets("Accueil").Activate
     EcrireValeurFormat cell:=Range(CELL_ver).Offset(-1, 0), val:="Version du fichier", f_size:=10, wrap:=True
     EcrireValeurFormat cell:=Range(CELL_ver), val:=VERSION, f_size:=16, wrap:=True
+    Worksheets("Trajets").Activate
 ' 1.9 : il faut d'abord retirer le filtre sur le VIN pour TOUT effacer
     Worksheets("Trajets").Range("$A$3:$B$150000").AutoFilter Field:=1
     With Worksheets("Trajets")
@@ -1208,38 +1212,40 @@ Sub RemplisDicoJSON()
     ' Attention la colonne 33 est réservée pour la marque.
     
     DicoJSON.Add "id", 2                    ' Identificateur trajet
-    DicoJSON.Add "alertsActive", 29
-    DicoJSON.Add "alertsResolved", 30
-    DicoJSON.Add "consumption", 8
+    
+    DicoJSON.Add "startDateTime", 31    ' Je place ici ces valeurs car ce sont celles fournies par le fichier de données
+    DicoJSON.Add "startMileage", 18         ' Donnée supplémentaire à ajouter dans la partie masquée du tableau
+    DicoJSON.Add "startPosLatitude", 10
+    DicoJSON.Add "startPosLongitude", 11
+    DicoJSON.Add "startPosAddress", 12
+    DicoJSON.Add "startPosAltitude", 34     ' Valeur présente dans certains fichier de données
+    DicoJSON.Add "startPosQuality", 27
+    
+    DicoJSON.Add "endDateTime", 32      ' Je place ici ces valeurs car ce sont celles fournies par le fichier de données
+    DicoJSON.Add "endMileage", 7
+    DicoJSON.Add "endPosLatitude", 13
+    DicoJSON.Add "endPosLongitude", 14
+    DicoJSON.Add "endPosAddress", 15
+    DicoJSON.Add "endPosAltitude", 35   ' Valeur présente dans certains fichier de données
+    DicoJSON.Add "endPosQuality", 28
+    
     DicoJSON.Add "destAddress", 22
     DicoJSON.Add "destQuality", 23
     DicoJSON.Add "destLatitude", 20
     DicoJSON.Add "destLongitude", 21
+    
     DicoJSON.Add "distance", 19
-    DicoJSON.Add "endMileage", 7
-    DicoJSON.Add "endPosAddress", 15
-    DicoJSON.Add "endPosAltitude", 35   ' Valeur présente dans certains fichier de données
-    DicoJSON.Add "endPosLatitude", 13
-    DicoJSON.Add "endPosLongitude", 14
-    DicoJSON.Add "endPosQuality", 28
+    DicoJSON.Add "consumption", 8
     DicoJSON.Add "fuelAutonomy", 17
     DicoJSON.Add "fuelLevel", 16
+    
     DicoJSON.Add "maintenanceDays", 24
     DicoJSON.Add "maintenanceDistance", 25
     DicoJSON.Add "maintenancePassed", 26
-    DicoJSON.Add "startMileage", 18         ' Donnée supplémentaire à ajouter dans la partie masquée du tableau
-    DicoJSON.Add "startPosAddress", 12
-    DicoJSON.Add "startPosAltitude", 34     ' Valeur présente dans certains fichier de données
-    DicoJSON.Add "startPosLatitude", 10
-    DicoJSON.Add "startPosLongitude", 11
-    DicoJSON.Add "startPosQuality", 27
-    
     ' Comme il se peut que certaines données soient absentes (valeur vide dans le tableau), il faut être sûr que la dernière valeur écrite
     ' dans le fichier ne soit pas une de ces valeurs vides.
-    ' On place donc volontairement les deux valeurs "startDateTime" et endDateTime" en dernier dans le DicoJSON parce qu'elles ne seront jamais vide !
-    ' Mais on ne change pas leurs colones dans le tableau.
-    DicoJSON.Add "startDateTime", 31    ' Je place ici ces valeurs car ce sont celles fournies par le fichier de données
-    DicoJSON.Add "endDateTime", 32      ' Je place ici ces valeurs car ce sont celles fournies par le fichier de données
+    DicoJSON.Add "alertsActive", 29
+    DicoJSON.Add "alertsResolved", 30
     
     DicoRempli = True
 End Sub
@@ -1545,20 +1551,25 @@ Sub MYP_JSON_Encode()
                                 Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": false" & virgule_O_N
                             End If
                         Case "alertsActive", "alertsResolved"
-                            Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": ["
-                            Nb_Alerts = 0
-                            For Each Valeur In Split(Tableau_Trajets(j, DicoJSON(InfoJSON)), ";")
-                                Nb_Alerts = Nb_Alerts + 1
-                                If Nb_Alerts > 1 Then
-                                    Print #NumFichier, "          },"    ' fin des alertes précédentes
+                            ' S'il y a des codes d'alertes, alors on écrit plusieurs lignes, s'il n'y a pas de code d'alertes, on écrit sous la forme []
+                            If (Tableau_Trajets(j, DicoJSON(InfoJSON))) <> "" Then
+                                Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": ["
+                                Nb_Alerts = 0
+                                For Each Valeur In Split(Tableau_Trajets(j, DicoJSON(InfoJSON)), ";")
+                                    Nb_Alerts = Nb_Alerts + 1
+                                    If Nb_Alerts > 1 Then
+                                        Print #NumFichier, "          },"    ' fin des alertes précédentes
+                                    End If
+                                    Print #NumFichier, "          {"
+                                    Print #NumFichier, "            " & Chr(34) & "code" & Chr(34) & ": " & Chr(34) & Valeur & Chr(34)
+                                Next
+                                If Nb_Alerts > 0 Then
+                                    Print #NumFichier, "          }"
                                 End If
-                                Print #NumFichier, "          {"
-                                Print #NumFichier, "            " & Chr(34) & "code" & Chr(34) & ": " & Chr(34) & Valeur & Chr(34)
-                            Next
-                            If Nb_Alerts > 0 Then
-                                Print #NumFichier, "          }"
+                                Print #NumFichier, "        ]" & virgule_O_N
+                            Else    ' Il n'y a aucune alertes dans ce tableau
+                                Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": []" & virgule_O_N
                             End If
-                            Print #NumFichier, "        ]" & virgule_O_N
                         Case "endMileage", "consumption", "startPosLatitude", "startPosLongitude", "endPosLatitude", "endPosLongitude", "startMileage", "distance"   ' transformer , en .
                             Print #NumFichier, "        " & Chr(34) & InfoJSON & Chr(34) & ": " & Replace(Tableau_Trajets(j, DicoJSON(InfoJSON)), ",", ".") & virgule_O_N
                         Case "destLatitude", "destLongitude", "startPosAltitude", "endPosAltitude"   ' transformer , en . et champs potentiellement vides
