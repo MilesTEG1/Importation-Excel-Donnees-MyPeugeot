@@ -37,6 +37,7 @@ Attribute VB_Name = "Module1"
 '       - V 2.0.2 : Modifications de l'export JSON pour avoir les tableaux d'alertes vide écrit sur une seule ligne.
 '                   Ajout de procédures pour neutraliser les erreurs de nombre écrit dans un format texte mais pas dans tous les classeurs,
 '                       seulement lorsque celui là s'ouvre (Voir dans ThisWorkbook)
+'       - V 2.0.3 : Correctif mineur sur l'utilisation de Application.ErrorCheckingOptions.NumberAsText = false dans ThisWorkbook
 '
 ' Couples de versions d'Excel & OS testées :
 '       - Windows 10 v1909 (18363.752) & Excel pour Office 365 Version 2003 (16.0 build 12624.20382 & 16.0 build 12624.20442)
@@ -49,7 +50,7 @@ Option Base 1       ' les tableaux commenceront à l'indice 1
 '
 ' Déinissons quelques constantes qui serviront pour les colonnes/lignes/plages de cellules.
 '
-Const VERSION As String = "v2.0.2"     ' Version du fchier
+Const VERSION As String = "v2.0.3"     ' Version du fchier
 Const CELL_ver As String = "B3"             ' Cellule où afficher la version du fichier
 
 'Const var_DEBUG As Boolean = True       ' True =    On active un mode DEBUG où on affiche certaines choses

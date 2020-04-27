@@ -13,14 +13,17 @@ Dim MyErrorCheckValue As Boolean
 
 Private Sub Workbook_Open()
     MyErrorCheckValue = Application.ErrorCheckingOptions.NumberAsText
+    Worksheets("Accueil").Range("Z1").Value = MyErrorCheckValue
     Application.ErrorCheckingOptions.NumberAsText = False
 End Sub
 Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    MyErrorCheckValue = Worksheets("Accueil").Range("Z1").Value
     Application.ErrorCheckingOptions.NumberAsText = MyErrorCheckValue
 End Sub
 Private Sub Workbook_Activate()
     Application.ErrorCheckingOptions.NumberAsText = False
 End Sub
 Private Sub Workbook_Deactivate()
+    MyErrorCheckValue = Sheets("Accueil").Range("Z1").Value
     Application.ErrorCheckingOptions.NumberAsText = MyErrorCheckValue
 End Sub
