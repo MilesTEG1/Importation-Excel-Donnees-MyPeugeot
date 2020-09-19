@@ -40,5 +40,7 @@ Cependant il faut activer une référence : **Microsoft Scripting Runtime** afin
 * Utilisation d'une page d'accueil listant les VINs importés avec une correspondance d'un véhicule
 * La page d'accueil contient le TCD et les boutons pour lancer les macros
 * Affichage de la dernière position connue pour le VIN sélectionné (uniquement un VIN sélectionné)
+* Reconstruction de quelques données manquantes
+* Fonctionne avec macOS (Catalina) et Excel (Office 365)
 
 ![Feuille d'accueil](https://raw.githubusercontent.com/MilesTEG1/Importation-Excel-Donnees-MyPeugeot/master/images/Feuille%20d'accueil.png)

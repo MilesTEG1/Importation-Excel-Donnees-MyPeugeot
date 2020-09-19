@@ -1,7 +1,7 @@
 
 # To-do (priorité)
 
-- [ ] Recruter des testeurs de l'app MyCytroen et MyDS
+- [ ] Recruter de nouveaux testeurs (notemment de l'app MyCytroen et MyDS)
 - [ ] Augmenter la taille du nombre de VIN possible (tableau [M;N])
 
 
@@ -9,11 +9,11 @@
 
 - [ ] Refaire tous les graphiques
 - [ ] Reconstruire certaines infos manquante en cas de trajets manquants :
-  - [ ] Adresse de départ du tajet i = adresse d'arrivée du trajet i-1
-  - [ ] Adresse de départ du tajet i = adresse de départ du trajet i+1
+  - [X] Adresse de départ du tajet i = adresse d'arrivée du trajet i-1
+  - [X] Adresse de départ du tajet i = adresse de départ du trajet i+1
   - [ ] Kilométrage de départ du tajet i = Kilométrage d'arrivée du trajet i-1
   - [ ] Kilométrage d'arrivée du tajet i = Kilométrage de départ du trajet i+1
-  - [ ] idem pour le volume de carburant
+  - [X] idem pour le volume de carburant
 - [ ] Nettoyer le code de tous les commentaires inutiles de code inutilisé quand le code sera stabilisé
 
 
@@ -33,4 +33,5 @@
 - [X] Ajouter l'adresse du dernier lieu connu correspondant au dernier trajet fait pour le VIN sélectionné
 - [X] Détermination de la marque de la voiture
 - [X] Importer tous les champs non-importés
+- [X] Rendre compatible avec Excel macOS !!
 
